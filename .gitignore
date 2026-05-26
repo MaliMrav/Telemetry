@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Arduino build junk
+*.ino.cpp
+*.elf
+*.bin
+
+# PlatformIO (future)
+.pio
+.vscode
