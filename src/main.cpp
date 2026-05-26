@@ -1,6 +1,9 @@
 #include <Arduino.h>
+#include <LittleFS.h>
+#define SPIFFS LittleFS
 
 #include "settings.h"
+
 #include <time.h>
 #include <SPI.h>
 
@@ -119,6 +122,8 @@ EspMQTTClient client(
 
 unsigned long lastRedraw = 0;
 
+void drawScreen();
+
 // =====================================================
 // Helpers
 // =====================================================
@@ -193,6 +198,8 @@ void onConnectionEstablished() {
 // =====================================================
 void setup() {
   Serial.begin(115200);
+
+  SPIFFS.begin();
 
   pinMode(Pins::TFT_LED, OUTPUT);
   digitalWrite(Pins::TFT_LED, LOW);
