@@ -1,6 +1,6 @@
-#include "settings.h"
-
 #include <Arduino.h>
+
+#include "settings.h"
 #include <time.h>
 #include <SPI.h>
 
