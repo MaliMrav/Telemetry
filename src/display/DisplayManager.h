@@ -15,6 +15,8 @@ private:
   void drawSensorGrid();
   void drawTrendArrow(int x, int y, TrendDirection t);
 
+  int8_t getWifiQuality(); //returns an integer between 0 and 100
+
   String formatValue(SensorType type, float v);
   uint16_t getColor(SensorType t);
 };
