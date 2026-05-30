@@ -1,18 +1,18 @@
 #pragma once
 
 namespace WiFiConfig {
-  constexpr char SSID[] = "Lekic-HA";
-  constexpr char PASSWORD[] = "1793248650";
+  constexpr char SSID[] = "MyWifi";
+  constexpr char PASSWORD[] = "SuperSecretPassword";
 }
 
 namespace MQTT {
-  constexpr char SERVER[] = "172.20.20.140";
+  constexpr char SERVER[] = "192.168.1.100";
   constexpr uint16_t PORT = 1883;
 
   constexpr char CLIENT[] = "WeatherDisplay";
 
-  constexpr char USERNAME[] = "mqtt_user";
-  constexpr char PASSWORD[] = "MaliMrav";
+  constexpr char USERNAME[] = "mqttuser";
+  constexpr char PASSWORD[] = "mqttpassword";
 }
 
 namespace OTA {

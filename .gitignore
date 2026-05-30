@@ -9,3 +9,7 @@
 # PlatformIO (future)
 .pio
 .vscode
+
+# My Secrets
+platformio.local.ini
+secrets.h

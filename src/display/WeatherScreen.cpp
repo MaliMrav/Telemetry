@@ -1,0 +1,1 @@
+extern WeatherData weather;
