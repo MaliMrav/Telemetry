@@ -1,61 +1,131 @@
 #include "MqttManager.h"
-#include <EspMQTTClient.h>
+
 #include "../config/settings.h"
 #include "../models/SensorTile.h"
 
-static EspMQTTClient client(
-  WiFiConfig::SSID,
-  WiFiConfig::PASSWORD,
-  MQTT::SERVER,
-  MQTT::USERNAME,
-  MQTT::PASSWORD,
-  MQTT::CLIENT,
-  MQTT::PORT
-);
+#if MQTT_USE_AUTH
 
-void onConnectionEstablished() {
-  for (uint8_t i = 0; i < SENSOR_COUNT; i++) {
-    client.subscribe(sensorTiles[i].topic,
-      [i](const String &p) { MqttManager::updateValue(i, p.toFloat()); });
-    client.subscribe(sensorTiles[i].minTopic,
-      [i](const String &p) { MqttManager::updateMin(i, p.toFloat()); });
-    client.subscribe(sensorTiles[i].maxTopic,
-      [i](const String &p) { MqttManager::updateMax(i, p.toFloat()); });
-    client.subscribe(sensorTiles[i].trendTopic,
-      [i](const String &p) { MqttManager::updateTrend(i, p); });
-  }
+MqttManager::MqttManager()
+    : mqttClient(
+        WiFiConfig::SSID,
+        WiFiConfig::PASSWORD,
+        MQTT::SERVER,
+        MQTT::USERNAME,
+        MQTT::PASSWORD,
+        MQTT::CLIENT,
+        MQTT::PORT)
+{
 }
 
-void MqttManager::begin() {}
+#else
+
+MqttManager::MqttManager()
+    : mqttClient(
+        WiFiConfig::SSID,
+        WiFiConfig::PASSWORD,
+        MQTT::SERVER,
+        MQTT::CLIENT,
+        MQTT::PORT)
+{
+}
+
+#endif
+
+void MqttManager::begin() {
+
+    mqttClient.enableDebuggingMessages(false);
+
+    mqttClient.setKeepAlive(30);
+}
 
 void MqttManager::loop() {
-  client.loop();
+
+    mqttClient.loop();
+
+    if (mqttClient.isConnected()) {
+
+        static bool subscribed = false;
+
+        if (!subscribed) {
+
+            subscribeTopics();
+            subscribed = true;
+        }
+
+    }
 }
 
-void MqttManager::updateValue(uint8_t i, float v) {
-  if (isnan(v)) return;
-  sensorTiles[i].value = v;
-  sensorTiles[i].valid = true;
+void MqttManager::subscribeTopics() {
+
+    SensorTile* tiles = SensorRepository::getTiles();
+    for (uint8_t i = 0;
+         i < SensorRepository::getCount();
+         i++) {
+
+        mqttClient.subscribe(
+            tiles[i].topic,
+            [i](const String& payload) {
+                updateValue(i, payload.toFloat());
+            });
+
+        mqttClient.subscribe(
+            tiles[i].minTopic,
+            [i](const String& payload) {
+                updateMin(i, payload.toFloat());
+            });
+
+        mqttClient.subscribe(
+            tiles[i].maxTopic,
+            [i](const String& payload) {
+                updateMax(i, payload.toFloat());
+            });
+
+        mqttClient.subscribe(
+            tiles[i].trendTopic,
+            [i](const String& payload) {
+                updateTrend(i, payload);
+            });
+    }
 }
 
-void MqttManager::updateMin(uint8_t i, float v) {
-  if (!isnan(v)) sensorTiles[i].minVal = v;
+void MqttManager::updateValue(uint8_t index, float value) {
+
+    if (isnan(value)) {
+        return;
+    }
+
+    sensorTiles[index].value = value;
+    sensorTiles[index].valid = true;
 }
 
-void MqttManager::updateMax(uint8_t i, float v) {
-  if (!isnan(v)) sensorTiles[i].maxVal = v;
+void MqttManager::updateMin(uint8_t index, float value) {
+
+    if (!isnan(value)) {
+        sensorTiles[index].minVal = value;
+    }
 }
 
-void MqttManager::updateTrend(uint8_t i, const String &p) {
-  sensorTiles[i].trend = parseTrend(p);
+void MqttManager::updateMax(uint8_t index, float value) {
+
+    if (!isnan(value)) {
+        sensorTiles[index].maxVal = value;
+    }
 }
 
-TrendDirection MqttManager::parseTrend(const String &p) {
-  String s = p;
-  s.trim();
-  s.toLowerCase();
-  if (s == "up")   return TREND_UP;
-  if (s == "down") return TREND_DOWN;
-  if (s == "flat") return TREND_FLAT;
-  return TREND_NONE;
+void MqttManager::updateTrend(uint8_t index, const String& payload) {
+
+    String s = payload;
+
+    s.trim();
+    s.toLowerCase();
+
+    if (s == "up") {
+        sensorTiles[index].trend = TREND_UP;
+    }
+    else if (s == "down") {
+        sensorTiles[index].trend = TREND_DOWN;
+    }
+    else {
+        sensorTiles[index].trend = TREND_NONE;
+    }
 }

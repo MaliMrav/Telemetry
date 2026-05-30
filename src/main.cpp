@@ -7,6 +7,7 @@
 #include "screens/WeatherScreen.h"
 #include "mqtt/MqttManager.h"
 #include "ota/OtaManager.h"
+#include "system/SystemManager.h"
 
 DisplayManager display;
 WeatherScreen weatherScreen(display);
@@ -22,15 +23,20 @@ void setup() {
 
   configTime(TimeConfig::TIMEZONE.c_str(), TimeConfig::NTP_SERVER);
 
-  for (uint8_t i = 0; i < SENSOR_COUNT; i++) {
-    sensorTiles[i].value  = NAN;
-    sensorTiles[i].minVal = NAN;
-    sensorTiles[i].maxVal = NAN;
-    sensorTiles[i].trend  = TREND_NONE;
-    sensorTiles[i].valid  = false;
+  SensorTile* tiles =
+    SensorRepository::getTiles();
+
+    for (uint8_t i = 0;
+         i < SensorRepository::getCount();
+         i++) {
+    tiles[i].value  = NAN;
+    tiles[i].minVal = NAN;
+    tiles[i].maxVal = NAN;
+    tiles[i].trend  = TREND_NONE;
+    tiles[i].valid  = false;
   }
 
-  String hostname = String(System::HOSTNAME) + String(ESP.getChipId(), HEX);
+  const String hostname = SystemManager::getHostname();
   WiFi.hostname(hostname);
 
   ota.begin(hostname.c_str());

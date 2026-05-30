@@ -1,5 +1,6 @@
 #include "WeatherScreen.h"
 #include "../display/DisplayManager.h"
+#include "../models/SensorRepository.h"
 #include "../config/settings.h"
 
 #include <ESP8266WiFi.h>
@@ -67,6 +68,11 @@ void WeatherScreen::drawWifiQuality() {
 }
 
 void WeatherScreen::drawSensorGrid() {
+  SensorTile* tiles =
+    SensorRepository::getTiles();
+
+  uint8_t sensorCount =
+    SensorRepository::getCount();
   auto& gfx = display_.getGfx();
 
   const int margin = 8;
@@ -74,16 +80,16 @@ void WeatherScreen::drawSensorGrid() {
   const int topY = 60;
 
   const int cols = 2;
-  const int rows = (SENSOR_COUNT + 1) / 2;
+  const int rows = (sensorCount + 1) / 2;
 
   const int tileW = (gfx.getWidth() - (2 * margin) - gap) / 2;
   const int tileH = (gfx.getHeight() - topY - (rows * gap)) / rows;
 
-  for (uint8_t i = 0; i < SENSOR_COUNT; i++) {
+  for (uint8_t i = 0; i < sensorCount; i++) {
     uint8_t row = i / cols;
     uint8_t col = i % cols;
 
-    bool full = (i == SENSOR_COUNT - 1);
+    bool full = (i == sensorCount - 1);
 
     int x = full ? margin : margin + col * (tileW + gap);
     int w = full ? gfx.getWidth() - (2 * margin) : tileW;

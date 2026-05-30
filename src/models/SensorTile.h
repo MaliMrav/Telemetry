@@ -1,5 +1,4 @@
 #pragma once
-#include <Arduino.h>
 
 enum SensorType {
   TEMP,
@@ -15,14 +14,16 @@ enum TrendDirection {
 };
 
 struct SensorTile {
-  const char *label;
-  const char *topic;
-  const char *unit;
+
+  const char* label;
+  const char* topic;
+  const char* unit;
+
   SensorType type;
 
-  const char *minTopic;
-  const char *maxTopic;
-  const char *trendTopic;
+  const char* minTopic;
+  const char* maxTopic;
+  const char* trendTopic;
 
   float value;
   float minVal;
@@ -31,7 +32,3 @@ struct SensorTile {
   TrendDirection trend;
   bool valid;
 };
-
-// Expose globally (clean enough for embedded)
-extern SensorTile sensorTiles[];
-extern const uint8_t SENSOR_COUNT;
