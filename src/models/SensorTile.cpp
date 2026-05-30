@@ -1,5 +1,5 @@
 #include "SensorTile.h"
-#include "settings.h"
+#include "../config/settings.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 

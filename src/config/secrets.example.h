@@ -1,24 +1,18 @@
 #pragma once
 
-namespace WiFiConfig {
-  constexpr char SSID[] = "MyWifi";
-  constexpr char PASSWORD[] = "SuperSecretPassword";
+namespace WiFiSecrets {
+  constexpr const char* SSID     = "ssid_placeholder";
+  constexpr const char* PASSWORD = "password_placeholder";
 }
 
-namespace MQTT {
-  constexpr char SERVER[] = "192.168.1.100";
-  constexpr uint16_t PORT = 1883;
-
-  constexpr char CLIENT[] = "WeatherDisplay";
-
-  constexpr char USERNAME[] = "mqttuser";
-  constexpr char PASSWORD[] = "mqttpassword";
+namespace MqttSecrets {
+  constexpr const char* SERVER   = "server_placeholder";
+  constexpr const char* CLIENT   = "client_placeholder";
+  constexpr const char* USERNAME = "username_placeholder";
+  constexpr const char* PASSWORD = "password_placeholder";
 }
 
-namespace OTA {
-  constexpr char PASSWORD[] = "T0pserv1ce";
-
-  // Optional if you prefer hashes
-  constexpr char PASSWORD_HASH[] =
-      "44a31bf445aa918be705789e9aaa5e70";
+namespace OtaSecrets {
+  constexpr const char* PASSWORD      = "ota_password_placeholder";
+  constexpr const char* PASSWORD_HASH = "ota_password_hash_placeholder";
 }

@@ -1,22 +1,26 @@
 #pragma once
 
+#include <Arduino.h>
 #include <MiniGrafx.h>
 #include <ILI9341_SPI.h>
-#include "../models/SensorTile.h"
+
+enum MiniColorIndex : uint8_t {
+  MINI_BLACK  = 0,
+  MINI_WHITE  = 1,
+  MINI_YELLOW = 2,
+  MINI_BLUE   = 3
+};
 
 class DisplayManager {
 public:
+  DisplayManager();
+
   void begin();
-  void draw();
+
+  MiniGrafx& getGfx();
+  const MiniGrafx& getGfx() const;
 
 private:
-  void drawHeader();
-  void drawWifiQuality();
-  void drawSensorGrid();
-  void drawTrendArrow(int x, int y, TrendDirection t);
-
-  int8_t getWifiQuality(); //returns an integer between 0 and 100
-
-  String formatValue(SensorType type, float v);
-  uint16_t getColor(SensorType t);
+  ILI9341_SPI tft;
+  MiniGrafx gfx_;
 };

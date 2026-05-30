@@ -1,9 +1,0 @@
-OTA authentication is optional.
-
-If your device requires OTA authentication:
-
-cp platformio.local.ini.example platformio.local.ini
-
-Then edit platformio.local.ini and set your OTA password.
-
-The local file is ignored by Git and will not be committed.
