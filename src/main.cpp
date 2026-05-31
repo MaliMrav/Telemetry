@@ -27,14 +27,7 @@ void setup() {
 
   configTime(TimeConfig::TIMEZONE.c_str(), TimeConfig::NTP_SERVER);
 
-  SensorTile* tiles = SensorRepository::getTiles();
-  for (uint8_t i = 0; i < SensorRepository::getCount(); i++) {
-    tiles[i].value  = NAN;
-    tiles[i].minVal = NAN;
-    tiles[i].maxVal = NAN;
-    tiles[i].trend  = TREND_NONE;
-    tiles[i].valid  = false;
-  }
+  SensorRepository::initialize();
 
   ota.begin(hostname.c_str());
   mqtt.begin();
