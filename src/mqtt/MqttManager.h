@@ -1,21 +1,18 @@
 #pragma once
 
-#include <EspMQTTClient.h>
+#include <Arduino.h>
+#include "../models/SensorTile.h"
 
 class MqttManager {
 public:
-    MqttManager();
+  void begin();
+  void loop();
 
-    void begin();
-    void loop();
+  static void onConnected();
 
 private:
-    EspMQTTClient mqttClient;
-
-    void subscribeTopics();
-
-    static void updateValue(uint8_t index, float value);
-    static void updateMin(uint8_t index, float value);
-    static void updateMax(uint8_t index, float value);
-    static void updateTrend(uint8_t index, const String& payload);
+  static void updateValue(uint8_t i, float v);
+  static void updateMin(uint8_t i, float v);
+  static void updateMax(uint8_t i, float v);
+  static void updateTrend(uint8_t i, const String& p);
 };

@@ -1,115 +1,64 @@
 #include "MqttManager.h"
-
+#include <EspMQTTClient.h>
 #include "../config/settings.h"
-#include "../models/SensorTile.h"
 #include "../models/SensorRepository.h"
 
-#if MQTT_USE_AUTH
+static EspMQTTClient mqttClient(
+  MQTT::SERVER,
+  MQTT::PORT,
+  MQTT::USERNAME,
+  MQTT::PASSWORD,
+  MQTT::CLIENT
+);
 
-MqttManager::MqttManager()
-    : mqttClient(
-        WiFiConfig::SSID,
-        WiFiConfig::PASSWORD,
-        MQTT::SERVER,
-        MQTT::USERNAME,
-        MQTT::PASSWORD,
-        MQTT::CLIENT,
-        MQTT::PORT)
-{
+void onConnectionEstablished() {
+  MqttManager::onConnected();
 }
-
-#else
-
-MqttManager::MqttManager()
-    : mqttClient(
-        WiFiConfig::SSID,
-        WiFiConfig::PASSWORD,
-        MQTT::SERVER,
-        MQTT::CLIENT,
-        MQTT::PORT)
-{
-}
-
-#endif
 
 void MqttManager::begin() {
-    mqttClient.enableDebuggingMessages(false);
-    mqttClient.enableLastWillMessage("lwt", "offline");
-    mqttClient.setKeepAlive(30);
+  mqttClient.enableDebuggingMessages(false);
+  mqttClient.setKeepAlive(30);
 }
 
 void MqttManager::loop() {
-
-    mqttClient.loop();
-
-    if (mqttClient.isConnected()) {
-
-        static bool subscribed = false;
-
-        if (!subscribed) {
-
-            subscribeTopics();
-            subscribed = true;
-        }
-
-    }
+  mqttClient.loop();
 }
 
-void MqttManager::subscribeTopics() {
+void MqttManager::onConnected() {
+  SensorTile* tiles = SensorRepository::getTiles();
+  uint8_t count = SensorRepository::getCount();
 
-    SensorTile* tiles = SensorRepository::getTiles();
-    for (uint8_t i = 0;
-         i < SensorRepository::getCount();
-         i++) {
-
-        mqttClient.subscribe(
-            tiles[i].topic,
-            [i](const String& payload) {
-                updateValue(i, payload.toFloat());
-            });
-
-        mqttClient.subscribe(
-            tiles[i].minTopic,
-            [i](const String& payload) {
-                updateMin(i, payload.toFloat());
-            });
-
-        mqttClient.subscribe(
-            tiles[i].maxTopic,
-            [i](const String& payload) {
-                updateMax(i, payload.toFloat());
-            });
-
-        mqttClient.subscribe(
-            tiles[i].trendTopic,
-            [i](const String& payload) {
-                updateTrend(i, payload);
-            });
-    }
+  for (uint8_t i = 0; i < count; i++) {
+    mqttClient.subscribe(tiles[i].topic,
+      [i](const String& p) { updateValue(i, p.toFloat()); });
+    mqttClient.subscribe(tiles[i].minTopic,
+      [i](const String& p) { updateMin(i, p.toFloat()); });
+    mqttClient.subscribe(tiles[i].maxTopic,
+      [i](const String& p) { updateMax(i, p.toFloat()); });
+    mqttClient.subscribe(tiles[i].trendTopic,
+      [i](const String& p) { updateTrend(i, p); });
+  }
 }
 
-void MqttManager::updateValue(uint8_t index, float value) {
-    if (isnan(value)) return;
-    SensorRepository::getTiles()[index].value = value;
-    SensorRepository::getTiles()[index].valid = true;
+void MqttManager::updateValue(uint8_t i, float v) {
+  if (isnan(v)) return;
+  SensorRepository::getTiles()[i].value = v;
+  SensorRepository::getTiles()[i].valid = true;
 }
 
-void MqttManager::updateMin(uint8_t index, float value) {
-    if (!isnan(value)) SensorRepository::getTiles()[index].minVal = value;
+void MqttManager::updateMin(uint8_t i, float v) {
+  if (!isnan(v)) SensorRepository::getTiles()[i].minVal = v;
 }
 
-void MqttManager::updateMax(uint8_t index, float value) {
-    if (!isnan(value)) SensorRepository::getTiles()[index].maxVal = value;
+void MqttManager::updateMax(uint8_t i, float v) {
+  if (!isnan(v)) SensorRepository::getTiles()[i].maxVal = v;
 }
 
-void MqttManager::updateTrend(uint8_t index, const String& payload) {
-    String s = payload;
-    s.trim();
-    s.toLowerCase();
-    if (s == "up")        SensorRepository::getTiles()[index].trend = TREND_UP;
-    else if (s == "down") SensorRepository::getTiles()[index].trend = TREND_DOWN;
-    else                  SensorRepository::getTiles()[index].trend = TREND_NONE;
+void MqttManager::updateTrend(uint8_t i, const String& p) {
+  String s = p;
+  s.trim();
+  s.toLowerCase();
+  if (s == "up")        SensorRepository::getTiles()[i].trend = TREND_UP;
+  else if (s == "down") SensorRepository::getTiles()[i].trend = TREND_DOWN;
+  else                  SensorRepository::getTiles()[i].trend = TREND_NONE;
 }
-
-// Required by EspMQTTClient - subscriptions are handled via polling in loop()
-void onConnectionEstablished() {}

@@ -1,19 +1,18 @@
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
 
 #include "config/settings.h"
-#include "models/SensorTile.h"
 #include "models/SensorRepository.h"
+#include "system/SystemManager.h"
+#include "wifi/WifiSetup.h"
 #include "display/DisplayManager.h"
 #include "screens/WeatherScreen.h"
-#include "mqtt/MqttManager.h"
 #include "ota/OtaManager.h"
-#include "system/SystemManager.h"
+#include "mqtt/MqttManager.h"
 
 DisplayManager display;
 WeatherScreen weatherScreen(display);
-MqttManager mqtt;
 OtaManager ota;
+MqttManager mqtt;
 
 unsigned long lastRedraw = 0;
 
@@ -22,23 +21,20 @@ void setup() {
 
   display.begin();
 
+  const String hostname = SystemManager::getHostname();
+
+  WifiSetup::begin(hostname.c_str());
+
   configTime(TimeConfig::TIMEZONE.c_str(), TimeConfig::NTP_SERVER);
 
-  SensorTile* tiles =
-    SensorRepository::getTiles();
-
-    for (uint8_t i = 0;
-         i < SensorRepository::getCount();
-         i++) {
+  SensorTile* tiles = SensorRepository::getTiles();
+  for (uint8_t i = 0; i < SensorRepository::getCount(); i++) {
     tiles[i].value  = NAN;
     tiles[i].minVal = NAN;
     tiles[i].maxVal = NAN;
     tiles[i].trend  = TREND_NONE;
     tiles[i].valid  = false;
   }
-
-  const String hostname = SystemManager::getHostname();
-  WiFi.hostname(hostname);
 
   ota.begin(hostname.c_str());
   mqtt.begin();
