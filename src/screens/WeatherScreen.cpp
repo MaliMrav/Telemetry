@@ -1,5 +1,6 @@
 #include "WeatherScreen.h"
 #include "../display/DisplayManager.h"
+#include <ArialRounded.h>
 #include "../models/SensorRepository.h"
 #include "../config/settings.h"
 

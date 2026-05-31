@@ -14,7 +14,7 @@ WeatherScreen weatherScreen(display);
 OtaManager ota;
 MqttManager mqtt;
 
-unsigned long lastRedraw = 0;
+uint32_t lastRedraw = 0;
 
 void setup() {
   Serial.begin(115200);

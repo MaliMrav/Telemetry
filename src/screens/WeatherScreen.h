@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 #include "../models/SensorTile.h"
-#include "ArialRounded.h"
+// #include "ArialRounded.h"
 
 class DisplayManager;
 
