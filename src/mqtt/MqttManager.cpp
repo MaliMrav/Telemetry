@@ -2,6 +2,7 @@
 
 #include "../config/settings.h"
 #include "../models/SensorTile.h"
+#include "../models/SensorRepository.h"
 
 #if MQTT_USE_AUTH
 
@@ -32,9 +33,8 @@ MqttManager::MqttManager()
 #endif
 
 void MqttManager::begin() {
-
     mqttClient.enableDebuggingMessages(false);
-
+    mqttClient.enableLastWillMessage("lwt", "offline");
     mqttClient.setKeepAlive(30);
 }
 
@@ -89,43 +89,27 @@ void MqttManager::subscribeTopics() {
 }
 
 void MqttManager::updateValue(uint8_t index, float value) {
-
-    if (isnan(value)) {
-        return;
-    }
-
-    sensorTiles[index].value = value;
-    sensorTiles[index].valid = true;
+    if (isnan(value)) return;
+    SensorRepository::getTiles()[index].value = value;
+    SensorRepository::getTiles()[index].valid = true;
 }
 
 void MqttManager::updateMin(uint8_t index, float value) {
-
-    if (!isnan(value)) {
-        sensorTiles[index].minVal = value;
-    }
+    if (!isnan(value)) SensorRepository::getTiles()[index].minVal = value;
 }
 
 void MqttManager::updateMax(uint8_t index, float value) {
-
-    if (!isnan(value)) {
-        sensorTiles[index].maxVal = value;
-    }
+    if (!isnan(value)) SensorRepository::getTiles()[index].maxVal = value;
 }
 
 void MqttManager::updateTrend(uint8_t index, const String& payload) {
-
     String s = payload;
-
     s.trim();
     s.toLowerCase();
-
-    if (s == "up") {
-        sensorTiles[index].trend = TREND_UP;
-    }
-    else if (s == "down") {
-        sensorTiles[index].trend = TREND_DOWN;
-    }
-    else {
-        sensorTiles[index].trend = TREND_NONE;
-    }
+    if (s == "up")        SensorRepository::getTiles()[index].trend = TREND_UP;
+    else if (s == "down") SensorRepository::getTiles()[index].trend = TREND_DOWN;
+    else                  SensorRepository::getTiles()[index].trend = TREND_NONE;
 }
+
+// Required by EspMQTTClient - subscriptions are handled via polling in loop()
+void onConnectionEstablished() {}

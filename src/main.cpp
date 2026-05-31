@@ -3,6 +3,7 @@
 
 #include "config/settings.h"
 #include "models/SensorTile.h"
+#include "models/SensorRepository.h"
 #include "display/DisplayManager.h"
 #include "screens/WeatherScreen.h"
 #include "mqtt/MqttManager.h"

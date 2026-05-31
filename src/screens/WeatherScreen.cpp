@@ -95,7 +95,7 @@ void WeatherScreen::drawSensorGrid() {
     int w = full ? gfx.getWidth() - (2 * margin) : tileW;
     int y = topY + row * (tileH + gap);
 
-    SensorTile &s = sensorTiles[i];
+    SensorTile &s = tiles[i];
 
     gfx.setColor(MINI_WHITE);
     gfx.drawRect(x, y, w, tileH);

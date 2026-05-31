@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Arduino.h>
 #include "SensorTile.h"
 
 class SensorRepository {

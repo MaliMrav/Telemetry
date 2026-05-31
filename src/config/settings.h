@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 #include "secrets.h"
-#include "TZinfo.h"
 
 // =====================================================
 // System
@@ -82,13 +81,12 @@ namespace Topics {
 // Time / Locale
 // =====================================================
 namespace TimeConfig {
-  static String TIMEZONE = getTzInfo("Australia/Sydney");
+  extern const String TIMEZONE;
 
   constexpr const char* NTP_SERVER = "pool.ntp.org";
 
-  const String WDAY_NAMES[]  = {"SUN","MON","TUE","WED","THU","FRI","SAT"};
-  const String MONTH_NAMES[] = {"JAN","FEB","MAR","APR","MAY","JUN",
-                                "JUL","AUG","SEP","OCT","NOV","DEC"};
+  extern const String WDAY_NAMES[7];
+  extern const String MONTH_NAMES[12];
 }
 
 // =====================================================
