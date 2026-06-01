@@ -3,6 +3,7 @@
 #include <ArialRounded.h>
 #include "../models/SensorRepository.h"
 #include "../config/settings.h"
+#include "ScreenConfig.h"
 
 #include <ESP8266WiFi.h>
 #include <time.h>
@@ -35,7 +36,11 @@ void WeatherScreen::drawHeader() {
   String date = TimeConfig::WDAY_NAMES[t->tm_wday] + " " +
                 TimeConfig::MONTH_NAMES[t->tm_mon] + " " +
                 String(t->tm_mday);
-  gfx.drawString(120, 6, date);
+  gfx.drawString(
+      gfx.getWidth() / 2,
+      ScreenConfig::HEADER_DATE_Y,
+      date
+  );
 
   gfx.setFont(ArialRoundedMTBold_36);
   char buf[10];
@@ -76,21 +81,33 @@ void WeatherScreen::drawSensorGrid() {
     SensorRepository::getCount();
   auto& gfx = display_.getGfx();
 
-  const int margin = 8;
-  const int gap = 8;
-  const int topY = 60;
+  const int margin = ScreenConfig::SIDE_MARGIN;
+  const int gap    = ScreenConfig::TILE_GAP;
+  const int topY   = ScreenConfig::TOP_MARGIN;
+  
+  const int cols   = ScreenConfig::COLUMNS;
+  const int rows =
+    (sensorCount + cols - 1) / cols;
 
-  const int cols = 2;
-  const int rows = (sensorCount + 1) / 2;
-
-  const int tileW = (gfx.getWidth() - (2 * margin) - gap) / 2;
-  const int tileH = (gfx.getHeight() - topY - (rows * gap)) / rows;
+  const int tileW =
+      (gfx.getWidth()
+       - (2 * margin)
+       - ((cols - 1) * gap))
+      / cols;
+  const int tileH =
+      (gfx.getHeight()
+       - topY
+       - ((rows - 1) * gap))
+      / rows;
 
   for (uint8_t i = 0; i < sensorCount; i++) {
     uint8_t row = i / cols;
     uint8_t col = i % cols;
 
-    bool full = (i == sensorCount - 1);
+    bool full =
+        ScreenConfig::LAST_TILE_FULL_WIDTH &&
+        (i == sensorCount - 1) &&
+        (sensorCount % cols == 1);
 
     int x = full ? margin : margin + col * (tileW + gap);
     int w = full ? gfx.getWidth() - (2 * margin) : tileW;
@@ -111,10 +128,10 @@ void WeatherScreen::drawSensorGrid() {
     String valueStr = formatValue(s.type, s.value) + s.unit;
     int valueWidth = gfx.getStringWidth(valueStr.c_str(), valueStr.length());
 
-    const int arrowOffset = 12;
-    const int arrowWidth  = 10;
-    const int spacing     = 6;
-    const int rightPad    = 6;
+    const int arrowOffset = ScreenConfig::ARROW_OFFSET;
+    const int arrowWidth  = ScreenConfig::ARROW_WIDTH;
+    const int spacing     = ScreenConfig::SPACING;
+    const int rightPad    = ScreenConfig::RIGHT_PAD;
 
     int arrowCenterX = x + arrowOffset;
 

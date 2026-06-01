@@ -1,5 +1,6 @@
 #include "SensorRepository.h"
 #include "../config/settings.h"
+#include "../mqtt/Topics.h"
 
 SensorTile sensorTiles[] = {
 
