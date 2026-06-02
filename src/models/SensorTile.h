@@ -16,14 +16,9 @@ enum TrendDirection {
 struct SensorTile {
 
   const char* label;
-  const char* topic;
   const char* unit;
 
   SensorType type;
-
-  const char* minTopic;
-  const char* maxTopic;
-  const char* trendTopic;
 
   float value;
   float minVal;
