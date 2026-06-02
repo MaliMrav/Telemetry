@@ -40,20 +40,20 @@ static constexpr TopicMapping topicMappings[] = {
     { Topics::Pergola::Temp::max,   1, TopicMapping::MAX   },
     { Topics::Pergola::Temp::trend, 1, TopicMapping::TREND },
 
-    { Topics::Kitchen::Hum::value,  2, TopicMapping::VALUE },
-    { Topics::Kitchen::Hum::min,    2, TopicMapping::MIN   },
-    { Topics::Kitchen::Hum::max,    2, TopicMapping::MAX   },
-    { Topics::Kitchen::Hum::trend,  2, TopicMapping::TREND },
+    { Topics::Kitchen::Hum::value, 2, TopicMapping::VALUE },
+    { Topics::Kitchen::Hum::min,   2, TopicMapping::MIN   },
+    { Topics::Kitchen::Hum::max,   2, TopicMapping::MAX   },
+    { Topics::Kitchen::Hum::trend, 2, TopicMapping::TREND },
 
     { Topics::Pergola::Hum::value,  3, TopicMapping::VALUE },
     { Topics::Pergola::Hum::min,    3, TopicMapping::MIN   },
     { Topics::Pergola::Hum::max,    3, TopicMapping::MAX   },
     { Topics::Pergola::Hum::trend,  3, TopicMapping::TREND },
 
-    { Topics::Kitchen::Pressure::value, 4, TopicMapping::VALUE },
-    { Topics::Kitchen::Pressure::min,   4, TopicMapping::MIN   },
-    { Topics::Kitchen::Pressure::max,   4, TopicMapping::MAX   },
-    { Topics::Kitchen::Pressure::trend, 4, TopicMapping::TREND }
+    { Topics::Pergola::Pressure::value, 4, TopicMapping::VALUE },
+    { Topics::Pergola::Pressure::min,   4, TopicMapping::MIN   },
+    { Topics::Pergola::Pressure::max,   4, TopicMapping::MAX   },
+    { Topics::Pergola::Pressure::trend, 4, TopicMapping::TREND }
 };
 
 constexpr uint8_t TOPIC_COUNT =
