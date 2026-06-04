@@ -1,0 +1,14 @@
+#pragma once
+
+enum SensorId {
+
+    SENSOR_KITCHEN_TEMP,
+    SENSOR_PERGOLA_TEMP,
+
+    SENSOR_KITCHEN_HUM,
+    SENSOR_PERGOLA_HUM,
+
+    SENSOR_PRESSURE,
+
+    SENSOR_COUNT
+};

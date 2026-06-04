@@ -27,7 +27,7 @@ void setup() {
 
   configTime(TimeConfig::TIMEZONE.c_str(), TimeConfig::NTP_SERVER);
 
-  SensorRepository::initialize();
+  SensorRepository::initialise();
 
   ota.begin(hostname.c_str());
   mqtt.begin();
