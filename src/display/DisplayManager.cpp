@@ -1,11 +1,13 @@
 #include "DisplayManager.h"
+
 #include "../config/settings.h"
+#include <ArialRounded.h>
 
 static uint16_t palette[] = {
   ILI9341_BLACK,
   ILI9341_WHITE,
   ILI9341_YELLOW,
-  0x7E3C
+  ILI9341_BLUE
 };
 
 DisplayManager::DisplayManager()
@@ -17,14 +19,65 @@ void DisplayManager::begin() {
   digitalWrite(Pins::TFT_LED, LOW);
 
   gfx_.init();
-  gfx_.fillBuffer(MINI_BLACK);
+  gfx_.fillBuffer(BLACK);
   gfx_.commit();
 }
 
-MiniGrafx& DisplayManager::getGfx() {
-  return gfx_;
+void DisplayManager::clear(Color color) {
+  gfx_.fillBuffer(color);
 }
 
-const MiniGrafx& DisplayManager::getGfx() const {
-  return gfx_;
+void DisplayManager::setColor(Color color) {
+  gfx_.setColor(color);
+}
+
+void DisplayManager::setTextAlignment(TextAlignment alignment)
+{
+    gfx_.setTextAlignment(
+        static_cast<TEXT_ALIGNMENT>(
+            alignment));
+}
+
+void DisplayManager::drawString(int16_t x, int16_t y, const String& text) {
+  gfx_.drawString(x, y, text);
+}
+
+void DisplayManager::drawString(int16_t x, int16_t y, const char* text) {
+  gfx_.drawString(x, y, text);
+}
+
+void DisplayManager::drawRect(int16_t x, int16_t y, int16_t w, int16_t h) {
+  gfx_.drawRect(x, y, w, h);
+}
+
+void DisplayManager::fillRect(int16_t x, int16_t y, int16_t w, int16_t h) {
+  gfx_.fillRect(x, y, w, h);
+}
+
+void DisplayManager::drawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
+  gfx_.drawLine(x1, y1, x2, y2);
+}
+
+void DisplayManager::setPixel(int16_t x, int16_t y) {
+  gfx_.setPixel(x, y);
+}
+
+int16_t DisplayManager::getWidth() {
+  return gfx_.getWidth();
+}
+
+int16_t DisplayManager::getHeight() {
+  return gfx_.getHeight();
+}
+
+int16_t DisplayManager::getStringWidth(
+    const String& text)
+{
+    return gfx_.getStringWidth(
+        text.c_str(),
+        text.length());
+}
+
+void DisplayManager::commit() {
+  gfx_.commit();
 }

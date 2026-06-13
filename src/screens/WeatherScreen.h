@@ -2,17 +2,24 @@
 
 #include <Arduino.h>
 #include "../models/SensorTile.h"
+#include "../display/DisplayManager.h"
+#include "../ui/Screen.h"
 
-class DisplayManager;
+class WeatherScreen : public Screen {
 
-class WeatherScreen {
 public:
   explicit WeatherScreen(DisplayManager& display);
 
-  void draw();
+  void enter() override; // override the virtual function from Screen
+  void leave() override; // override the virtual function from Screen
+  void update() override; // override the pure virtual function from Screen
 
-private:
+  void onTouch(const TouchEvent& event) override; // override the virtual function from Screen
+
+  private:
   DisplayManager& display_;
+
+  bool use12HourClock_ = false;
 
   void drawHeader();
   void drawWifiQuality();
@@ -21,5 +28,5 @@ private:
 
   int8_t getWifiQuality();
   String formatValue(SensorType type, float v);
-  uint16_t getColor(SensorType t);
+  DisplayManager::Color getColor(SensorType t);
 };

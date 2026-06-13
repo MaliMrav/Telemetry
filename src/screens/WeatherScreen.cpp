@@ -1,51 +1,113 @@
 #include "WeatherScreen.h"
+
 #include "../display/DisplayManager.h"
-#include <ArialRounded.h>
 #include "../models/SensorRepository.h"
 #include "../config/settings.h"
 #include "ScreenConfig.h"
+#include "../ui/ScreenZones.h"
 
+#include <ArialRounded.h>
 #include <ESP8266WiFi.h>
 #include <time.h>
 
 WeatherScreen::WeatherScreen(DisplayManager& display)
   : display_(display) {}
 
-void WeatherScreen::draw() {
-  auto& gfx = display_.getGfx();
+void WeatherScreen::enter() // This function is called when the screen becomes active. You can perform any setup or initialization here if needed.
+{
+}
 
-  gfx.fillBuffer(MINI_BLACK);
+void WeatherScreen::leave() // This function is called when the screen is no longer active. You can perform any cleanup here if needed.
+{
+}
+
+// The update function is called periodically (e.g., every second) to refresh the screen's content. Here, we clear the screen and redraw all elements.
+void WeatherScreen::update() {
+  display_.clear(DisplayManager::BLACK);
   drawHeader();
   drawWifiQuality();
   drawSensorGrid();
-  gfx.commit();
+  display_.commit();
 }
 
+void WeatherScreen::onTouch(
+    const TouchEvent& event)
+/** {
+    if (event.y < ScreenZones::TOP_HEIGHT)
+    {
+        use12HourClock_ =
+            !use12HourClock_;
+
+        update();
+    }
+} **/ // Temp removed for testing purposes, to prevent accidental toggling of the clock format when trying to interact with the top sensor tiles. Will re-enable once the touch zones are implemented. **/
+    {
+        use12HourClock_ =
+            !use12HourClock_;
+        update();
+    }
+
 void WeatherScreen::drawHeader() {
-  auto& gfx = display_.getGfx();
-
   time_t now = time(nullptr);
-  struct tm *t = localtime(&now);
-
-  gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  gfx.setColor(MINI_WHITE);
-
+  struct tm* t = localtime(&now);
   if (!t) return;
 
-  gfx.setFont(ArialRoundedMTBold_14);
+  display_.setTextAlignment(DisplayManager::CENTER);
+  display_.setColor(DisplayManager::WHITE);
+
+  display_.setFont(ArialRoundedMTBold_14);
   String date = TimeConfig::WDAY_NAMES[t->tm_wday] + " " +
                 TimeConfig::MONTH_NAMES[t->tm_mon] + " " +
                 String(t->tm_mday);
-  gfx.drawString(
-      gfx.getWidth() / 2,
+  display_.drawString(
+      display_.getWidth() / 2,
       ScreenConfig::HEADER_DATE_Y,
-      date
-  );
+      date);
 
-  gfx.setFont(ArialRoundedMTBold_36);
+  display_.setFont(ArialRoundedMTBold_36);
   char buf[10];
-  sprintf(buf, "%02d:%02d:%02d", t->tm_hour, t->tm_min, t->tm_sec);
-  gfx.drawString(120, 20, buf);
+  // Format the time string based on the 12-hour or 24-hour clock setting
+  if (use12HourClock_) {
+    int hour = t->tm_hour % 12;
+    if (hour == 0) hour = 12;
+    snprintf(buf, sizeof(buf), "%d:%02d:%02d", hour, t->tm_min, t->tm_sec);
+  } else {
+    snprintf(buf, sizeof(buf), "%02d:%02d:%02d", t->tm_hour, t->tm_min, t->tm_sec);
+  }
+  display_.setColor(DisplayManager::WHITE);
+
+  display_.drawString(display_.getWidth() / 2,ScreenConfig::HEADER_TIME_Y,buf);
+
+  if (use12HourClock_)
+  {
+      const char* amPm =
+          t->tm_hour < 12 ?
+              "AM" :
+              "PM";
+  
+      display_.setFont(
+          ArialRoundedMTBold_14);
+  
+      display_.setTextAlignment(
+          DisplayManager::CENTER);
+  
+      //
+      // Badge background
+      //
+      display_.setColor(
+          DisplayManager::WHITE);
+
+      // display_.fillRect(8, 28, 34, 18); // Draw a white rectangle as the background for the AM/PM badge. Adjust the position and size as needed.
+      display_.fillRect(8, 32, 34, 18); // Draw a white rectangle as the background for the AM/PM badge. Adjust the position and size as needed.
+      //
+      // Badge text
+      //
+      display_.setColor(
+          DisplayManager::BLUE);
+  
+      //display_.drawString(25,30,amPm); // Draw the AM/PM text on top of the badge. Adjust the position as needed to center it within the badge.
+      display_.drawString(25, 34, amPm); // Draw the AM/PM text on top of the badge. Adjust the position as needed to center it within the badge.
+  }
 }
 
 int8_t WeatherScreen::getWifiQuality() {
@@ -56,49 +118,38 @@ int8_t WeatherScreen::getWifiQuality() {
 }
 
 void WeatherScreen::drawWifiQuality() {
-  auto& gfx = display_.getGfx();
   int8_t q = getWifiQuality();
 
-  gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-  gfx.setFont(ArialMT_Plain_10);
-  gfx.setColor(MINI_WHITE);
-  gfx.drawString(228, 9, String(q) + "%");
+  display_.setTextAlignment(DisplayManager::RIGHT);
+  display_.setFont(ArialMT_Plain_10);
+  display_.setColor(DisplayManager::WHITE);
+  display_.drawString(228, 9, String(q) + "%");
 
   for (int8_t i = 0; i < 4; i++) {
     for (int8_t j = 0; j < 2 * (i + 1); j++) {
       if (q > i * 25 || j == 0) {
-        gfx.setPixel(230 + 2 * i, 18 - j);
+        display_.setPixel(230 + 2 * i, 18 - j);
       }
     }
   }
 }
 
 void WeatherScreen::drawSensorGrid() {
-  SensorTile* tiles =
-    SensorRepository::getTiles();
-
-  uint8_t sensorCount =
-    SensorRepository::getCount();
-  auto& gfx = display_.getGfx();
+  SensorTile* tiles = SensorRepository::getTiles();
+  uint8_t sensorCount = SensorRepository::getCount();
 
   const int margin = ScreenConfig::SIDE_MARGIN;
   const int gap    = ScreenConfig::TILE_GAP;
   const int topY   = ScreenConfig::TOP_MARGIN;
-  
-  const int cols   = ScreenConfig::COLUMNS;
-  const int rows =
-    (sensorCount + cols - 1) / cols;
+
+  const int cols = ScreenConfig::COLUMNS;
+  const int rows  = (sensorCount + cols - 1) / cols;
 
   const int tileW =
-      (gfx.getWidth()
-       - (2 * margin)
-       - ((cols - 1) * gap))
-      / cols;
+      (display_.getWidth() - (2 * margin) - ((cols - 1) * gap)) / cols;
+
   const int tileH =
-      (gfx.getHeight()
-       - topY
-       - ((rows - 1) * gap))
-      / rows;
+      (display_.getHeight() - topY - ((rows - 1) * gap)) / rows;
 
   for (uint8_t i = 0; i < sensorCount; i++) {
     uint8_t row = i / cols;
@@ -110,23 +161,24 @@ void WeatherScreen::drawSensorGrid() {
         (sensorCount % cols == 1);
 
     int x = full ? margin : margin + col * (tileW + gap);
-    int w = full ? gfx.getWidth() - (2 * margin) : tileW;
+    int w = full ? display_.getWidth() - (2 * margin) : tileW;
     int y = topY + row * (tileH + gap);
 
-    SensorTile &s = tiles[i];
+    SensorTile& s = tiles[i];
 
-    gfx.setColor(MINI_WHITE);
-    gfx.drawRect(x, y, w, tileH);
+    display_.setColor(DisplayManager::WHITE);
+    display_.drawRect(x, y, w, tileH);
 
-    gfx.setFont(ArialRoundedMTBold_14);
-    gfx.setColor(getColor(s.type));
-    gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-    gfx.drawString(x + w / 2, y + 10, s.label);
+    display_.setFont(ArialRoundedMTBold_14);
+    display_.setColor(getColor(s.type));
+    display_.setTextAlignment(DisplayManager::CENTER);
+    display_.drawString(x + w / 2, y + 10, s.label);
 
-    gfx.setFont(ArialMT_Plain_24);
+    display_.setFont(ArialMT_Plain_24);
 
     String valueStr = formatValue(s.type, s.value) + s.unit;
-    int valueWidth = gfx.getStringWidth(valueStr.c_str(), valueStr.length());
+    
+    int valueWidth = display_.getStringWidth(valueStr); // Get the width of the value string in pixels, to help with centering it
 
     const int arrowOffset = ScreenConfig::ARROW_OFFSET;
     const int arrowWidth  = ScreenConfig::ARROW_WIDTH;
@@ -143,40 +195,37 @@ void WeatherScreen::drawSensorGrid() {
     int valueStartX = contentLeft + (contentWidth - valueWidth) / 2;
 
     if (s.trend != TREND_NONE) {
-      gfx.setColor(
-        s.trend == TREND_UP   ? MINI_YELLOW :
-        s.trend == TREND_DOWN ? MINI_BLUE   :
-                                MINI_WHITE
+      display_.setColor(
+        s.trend == TREND_UP   ? DisplayManager::YELLOW :
+        s.trend == TREND_DOWN ? DisplayManager::BLUE   :
+                                DisplayManager::WHITE
       );
 
       drawTrendArrow(arrowCenterX, cy + 10, s.trend);
     }
 
-    gfx.setColor(MINI_WHITE);
-    gfx.setTextAlignment(TEXT_ALIGN_LEFT);
-    gfx.drawString(valueStartX, cy, valueStr);
+    display_.setColor(DisplayManager::WHITE);
+    display_.setTextAlignment(DisplayManager::LEFT);
+    display_.drawString(valueStartX, cy, valueStr);
 
-    gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-
-    gfx.setFont(ArialMT_Plain_10);
-    gfx.setColor(MINI_BLUE);
+    display_.setTextAlignment(DisplayManager::CENTER);
+    display_.setFont(ArialMT_Plain_10);
+    display_.setColor(DisplayManager::BLUE);
 
     if (!isnan(s.minVal) && !isnan(s.maxVal)) {
       String mm = formatValue(s.type, s.minVal) + " / " +
                   formatValue(s.type, s.maxVal);
-      gfx.drawString(x + w / 2, y + tileH - 18, mm);
+      display_.drawString(x + w / 2, y + tileH - 18, mm);
     } else {
-      gfx.drawString(x + w / 2, y + tileH - 18, "-- / --");
+      display_.drawString(x + w / 2, y + tileH - 18, "-- / --");
     }
   }
 }
 
 void WeatherScreen::drawTrendArrow(int x, int y, TrendDirection t) {
-  auto& gfx = display_.getGfx();
-
   auto thick = [&](int x1, int y1, int x2, int y2) {
-    gfx.drawLine(x1, y1, x2, y2);
-    gfx.drawLine(x1 + 1, y1, x2 + 1, y2);
+    display_.drawLine(x1, y1, x2, y2);
+    display_.drawLine(x1 + 1, y1, x2 + 1, y2);
   };
 
   switch (t) {
@@ -214,8 +263,8 @@ String WeatherScreen::formatValue(SensorType type, float v) {
   return "--";
 }
 
-uint16_t WeatherScreen::getColor(SensorType t) {
-  if (t == HUMIDITY) return MINI_BLUE;
-  if (t == PRESSURE) return MINI_YELLOW;
-  return MINI_WHITE;
+DisplayManager::Color WeatherScreen::getColor(SensorType t) {
+  if (t == HUMIDITY) return DisplayManager::BLUE;
+  if (t == PRESSURE) return DisplayManager::YELLOW;
+  return DisplayManager::WHITE;
 }
