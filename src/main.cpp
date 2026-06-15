@@ -149,29 +149,30 @@ void setup() {
 
 }
 
-void loop()
+void processTouch()
 {
-    ota.loop();
-    mqtt.loop();
-
-    if (millis() - lastRedraw > 1000)
-    {
-        screenManager.update();
-
-        lastRedraw = millis();
-    }
-
     int16_t x;
     int16_t y;
 
     if (touchController.getTouch(x, y))
     {
-        TouchEvent event
-        {
-            x,
-            y
-        };
+        TouchEvent event { x, y };
 
         screenManager.onTouch(event);
+    }
+}
+
+void loop() {
+
+    ota.loop();
+    mqtt.loop();
+
+    // screenManager.handleTouch(touchController);
+    processTouch();
+
+    // Redraw the screen every second to ensure the displayed time is updated, even if there are no touch interactions
+    if (millis() - lastRedraw > 1000) {
+        screenManager.update();
+        lastRedraw = millis();
     }
 }
