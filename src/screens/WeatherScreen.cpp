@@ -30,22 +30,41 @@ void WeatherScreen::update() {
   display_.commit();
 }
 
+// The onTouch function is called when a touch event occurs. Here, we check if the touch is in the header area and if so, we trigger an input event to toggle the time format.  
 void WeatherScreen::onTouch(
     const TouchEvent& event)
-/** {
-    if (event.y < ScreenZones::TOP_HEIGHT)
+{
+    if (ScreenZones::isInHeader(
+            event.x,
+            event.y))
     {
-        use12HourClock_ =
-            !use12HourClock_;
-
-        update();
+        onInput(
+        {
+            InputAction::TOGGLE_TIME_FORMAT
+        });
     }
-} **/ // Temp removed for testing purposes, to prevent accidental toggling of the clock format when trying to interact with the top sensor tiles. Will re-enable once the touch zones are implemented. **/
+}
+    
+// Handle high-level user actions.
+// Actions may originate from touch, buttons, encoders, etc.
+void WeatherScreen::onInput(
+    const InputEvent& event)
+{
+    switch (event.action)
     {
-        use12HourClock_ =
-            !use12HourClock_;
-        update();
+        case InputAction::TOGGLE_TIME_FORMAT: // For now we only handle the TOGGLE_TIME_FORMAT action, but you can expand this switch statement to handle other actions as needed.  
+        {
+            use12HourClock_ =
+                !use12HourClock_;
+            update();
+            break;
+        }
+        default:
+        {
+            break;
+        }
     }
+}
 
 void WeatherScreen::drawHeader() {
   time_t now = time(nullptr);

@@ -28,3 +28,11 @@ void ScreenManager::onTouch(
         currentScreen_->onTouch(event);
     }
 }
+
+void ScreenManager::onInput(
+    const InputEvent& event)
+{
+    if (currentScreen_){
+        currentScreen_->onInput(event);
+    }
+}

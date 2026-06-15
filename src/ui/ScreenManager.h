@@ -11,7 +11,9 @@ public:
 
     void update();
 
-    void onTouch(const TouchEvent& event); // New function to handle touch events and pass them to the
+    void onTouch(const TouchEvent& event); // New function to handle touch events and pass them to the current screen
+
+    void onInput(const InputEvent& event); // New function to handle input events and pass them to the
 
 private:
 

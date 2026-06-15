@@ -1,6 +1,9 @@
 #include "TouchController.h"
 #include "../config/DefaultTouchCalibration.h"
 
+#include<Arduino.h> // Temporarily added to prevent compilation errors in VSCode, should be removed when the project is properly configured with platformio  
+
+
 TouchController::TouchController(
     uint8_t csPin,
     uint8_t irqPin)
@@ -76,7 +79,6 @@ bool TouchController::saveCalibration() {
     return true;
 }
 
-// Starts the calibration process. The provided callback will be called with the raw touch coordinates when the user touches the screen during calibration.
 void TouchController::startCalibration(
     CalibrationCallback callback) {
 
@@ -88,7 +90,6 @@ void TouchController::startCalibration(
         millis();
 }
 
-// Continues the calibration process. Should be called repeatedly (e.g. in the main loop) until it returns true, indicating that calibration is finished.
 bool TouchController::continueCalibration() {
 
     TS_Point p =
@@ -203,7 +204,12 @@ bool TouchController::getTouch(
     return true;
 }
 
-// Coordinates transformation. Returns the calibrated touch coordinates as a TS_Point.
+TS_Point TouchController::getRawPoint()
+{
+    return touchScreen_.getPoint();
+}
+
+/*
 TS_Point TouchController::getPoint() {
 
     TS_Point p =
@@ -218,6 +224,28 @@ TS_Point TouchController::getPoint() {
 
     p.x = x;
     p.y = y;
+
+    return p;
+}
+*/
+
+TS_Point TouchController::getPoint()
+{
+    // TEMPORARY calibration transform.
+    // Derived from measured corner values.
+    // Will be replaced by the 4-point calibration system.
+    TS_Point raw =
+        touchScreen_.getPoint();
+
+    TS_Point p;
+
+    p.x =
+        ((3559 - raw.y) * 240) /
+        2977;
+
+    p.y =
+        ((raw.x - 425) * 320) /
+        3293;
 
     return p;
 }

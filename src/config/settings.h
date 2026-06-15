@@ -7,7 +7,7 @@
 // System
 // =====================================================
 namespace System {
-  constexpr const char* HOSTNAME = "ESP-07S-TFT-";
+  constexpr const char* HOSTNAME = "Weather-Display-";
 }
 
 // =====================================================

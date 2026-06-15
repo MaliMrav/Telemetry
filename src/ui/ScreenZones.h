@@ -1,12 +1,36 @@
 #pragma once
 
+#include <Arduino.h>
+
 namespace ScreenZones
 {
-    constexpr int TOP_HEIGHT = 40;
+    constexpr int SCREEN_WIDTH  = 240;
+    constexpr int SCREEN_HEIGHT = 320;
 
-    constexpr int LEFT_X      = 0;
-    constexpr int LEFT_WIDTH  = 120;
+    constexpr int TOP_HEIGHT = 50;
 
-    constexpr int RIGHT_X     = 120;
-    constexpr int RIGHT_WIDTH = 120;
+    inline bool isInHeader(
+        int16_t x,
+        int16_t y)
+    {
+        (void)x;
+
+        return y < TOP_HEIGHT;
+    }
+
+    inline bool isInLeftZone(
+        int16_t x,
+        int16_t y)
+    {
+        return y >= TOP_HEIGHT &&
+               x < (SCREEN_WIDTH / 2);
+    }
+
+    inline bool isInRightZone(
+        int16_t x,
+        int16_t y)
+    {
+        return y >= TOP_HEIGHT &&
+               x >= (SCREEN_WIDTH / 2);
+    }
 }

@@ -30,7 +30,10 @@ public:
 
     bool getTouch(int16_t& x,int16_t& y,uint16_t debounceMs = 250); // Returns true if a touch is detected and the coordinates are updated, false otherwise
 
+    TS_Point getRawPoint();
+
     TS_Point getPoint();
+
 
 private:
 

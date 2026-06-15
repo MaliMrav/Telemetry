@@ -16,6 +16,8 @@ public:
 
   void onTouch(const TouchEvent& event) override; // override the virtual function from Screen
 
+  void onInput(const InputEvent& event) override; // override the virtual function from Screen
+
   private:
   DisplayManager& display_;
 

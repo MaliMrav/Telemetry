@@ -146,6 +146,7 @@ void setup() {
     screenManager.update();
 
     lastRedraw = millis();
+
 }
 
 void loop()
@@ -159,9 +160,10 @@ void loop()
 
         lastRedraw = millis();
     }
+
     int16_t x;
     int16_t y;
-    
+
     if (touchController.getTouch(x, y))
     {
         TouchEvent event
