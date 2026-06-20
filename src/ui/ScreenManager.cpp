@@ -1,38 +1,32 @@
 #include "ScreenManager.h"
 
-void ScreenManager::show(
-    Screen* screen)
+void ScreenManager::show(Screen* screen)
 {
-    if (currentScreen_) {
+    if (currentScreen_)
+    {
         currentScreen_->leave();
     }
 
     currentScreen_ = screen;
 
-    if (currentScreen_) {
+    if (currentScreen_)
+    {
         currentScreen_->enter();
     }
 }
 
 void ScreenManager::update()
 {
-    if (currentScreen_) {
+    if (currentScreen_)
+    {
         currentScreen_->update();
     }
 }
 
-void ScreenManager::onTouch(
-    const TouchEvent& event)
+void ScreenManager::onInput(const InputEvent& event)
 {
-    if (currentScreen_){
-        currentScreen_->onTouch(event);
-    }
-}
-
-void ScreenManager::onInput(
-    const InputEvent& event)
-{
-    if (currentScreen_){
+    if (currentScreen_)
+    {
         currentScreen_->onInput(event);
     }
 }

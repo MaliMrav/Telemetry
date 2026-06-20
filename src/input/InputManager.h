@@ -1,17 +1,13 @@
 #pragma once
 
-#include "../ui/UIAction.h"
+#include "InputEvent.h"
 
 class InputManager
 {
 public:
-
-    static void trigger(
-        UIAction action);
-
-    static UIAction getAction();
+    static void trigger(const InputEvent& event);
+    static InputEvent getEvent();
 
 private:
-
-    static UIAction pendingAction_;
+    static InputEvent pendingEvent_;
 };

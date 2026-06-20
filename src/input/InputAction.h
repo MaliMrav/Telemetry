@@ -4,13 +4,15 @@ enum class InputAction
 {
     NONE,
 
+    TAP,
+    LONG_PRESS,
+
     PREVIOUS_SCREEN,
     NEXT_SCREEN,
 
-    TOGGLE_TIME_FORMAT,
+    SELECT,
+    BACK,
 
     SCROLL_UP,
-    SCROLL_DOWN,
-
-    SELECT
+    SCROLL_DOWN
 };

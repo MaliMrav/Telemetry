@@ -1,22 +1,15 @@
 #include "InputManager.h"
 
-UIAction InputManager::pendingAction_ =
-    ACTION_NONE;
+InputEvent InputManager::pendingEvent_{};
 
-void InputManager::trigger(
-    UIAction action)
+void InputManager::trigger(const InputEvent& event)
 {
-    pendingAction_ =
-        action;
+    pendingEvent_ = event;
 }
 
-UIAction InputManager::getAction()
+InputEvent InputManager::getEvent()
 {
-    UIAction action =
-        pendingAction_;
-
-    pendingAction_ =
-        ACTION_NONE;
-
-    return action;
+    InputEvent event = pendingEvent_;
+    pendingEvent_ = {};
+    return event;
 }
