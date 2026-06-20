@@ -1,8 +1,9 @@
 #pragma once
 
 #include "TouchController.h"
+#include "../input/InputSource.h"
 
-class TouchManager
+class TouchManager : public IInputSource
 {
 public:
     enum class Mode
@@ -15,10 +16,12 @@ public:
         TouchController& controller);
 
     void setMode(Mode mode);
-    void update();
+    void update() override;
 
 private:
     TouchController& controller_;
     Mode mode_ = Mode::Normal;
+
     bool wasTouched_ = false;
+    unsigned long lastEventMs_ = 0;
 };

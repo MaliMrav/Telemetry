@@ -1,82 +1,80 @@
 # ESP8266 MQTT Weather Display
 
-> **This project is as much a software architecture exercise as it is a weather display.**
+> **This project is as much an architecture and UX exercise as it is a weather display.**
 >
-> What began as a simple MQTT-powered environmental dashboard has evolved into a reusable embedded framework that explores modular architecture, separation of concerns, maintainability, and efficient use of constrained ESP8266 resources.
+> What began as a simple MQTT-powered dashboard has evolved into a reusable embedded UI framework that explores modular design, separation of concerns, and maintainable use of constrained ESP8266 hardware.
 >
-> The display node intentionally performs very little computation itself. Wherever practical, data processing is delegated to upstream systems such as Home Assistant, allowing the ESP8266 to focus on what it does best: consuming data, presenting information, and remaining reliable.
+> The display node intentionally does very little computation itself. Wherever practical, processing is delegated upstream so the ESP8266 can stay focused on what it does best: consume data, present it clearly, and remain reliable.
 
 ---
 
 ## Why This Project Exists
 
-This project started with a very practical problem.
+This project started with a practical problem.
 
-I had multiple ESP8266-based BME280 sensor nodes deployed around the house, each with its own small OLED display. While functional, the OLEDs suffered from burn-in and were not ideal for long-term operation. They also complicated future plans for battery-powered sensor nodes due to their continuous power consumption.
+I had multiple ESP8266-based BME280 sensor nodes around the house, each with a small OLED display. They worked, but OLED burn-in and continuous power use made them a poor long-term fit, especially for future battery-powered nodes.
 
 The initial goal was simple:
 
-* Collect environmental data from multiple locations around the property.
-* Publish the data via MQTT.
-* Present everything on a single dedicated display.
+- collect environmental data from multiple locations around the property
+- publish the data via MQTT
+- present it on a single dedicated display
 
-The first two monitored locations were:
+The first monitored locations were:
 
-* Kitchen (inside)
-* Pergola (outside)
+- Kitchen (inside)
+- Pergola (outside)
 
-Over time, the project evolved from a weather display into something larger: a reusable MQTT-driven dashboard framework capable of displaying any MQTT-based data source.
-
-At the same time, the codebase itself became a software engineering exercise in designing maintainable embedded systems using modern tooling and architectural practices.
+Over time, the project grew from a weather display into something larger: a reusable MQTT-driven embedded dashboard framework capable of showing many kinds of data.
 
 ---
 
-# Development Journey
+## Development Journey
 
-The original version of this project was developed in Arduino IDE as a single-file proof of concept.
+The first version was built in Arduino IDE as a single-file proof of concept.
 
-As functionality increased, maintaining the code became progressively more difficult. Features, display logic, MQTT handling, OTA updates, WiFi management, and configuration all lived together in a single application file.
+As features accumulated, maintenance became harder. Display logic, MQTT handling, OTA updates, WiFi management, and configuration all lived together in one application file.
 
-A conscious decision was made to modernise the project and migrate to:
+A conscious decision was made to modernise the project and move to:
 
-* Visual Studio Code
-* PlatformIO
-* Modular architecture
-* Source control friendly configuration
-* Separation of concerns
-* Reusable components
+- Visual Studio Code
+- PlatformIO
+- Modular architecture
+- Source-control-friendly configuration
+- Separation of concerns
+- Reusable components
 
-The goal was not simply to reorganise files, but to create a codebase that could continue growing without becoming difficult to understand or maintain.
+The goal was not just to reorganise files, but to build a codebase that could keep growing without becoming difficult to understand or maintain.
 
-Today the project is structured around clearly defined responsibilities and module ownership, while remaining approachable for hobbyists and makers.
+This version is the result of that refactor journey.
 
 ---
 
-# Design Philosophy
+## Design Philosophy
 
-A key architectural decision was made early in the refactoring process:
+A key architectural decision was made early:
 
 **The display should remain a presentation device.**
 
-Rather than performing complex calculations locally, the ESP8266 consumes already-processed information published to MQTT topics.
+Rather than doing complex calculations locally, the ESP8266 consumes already-processed information published to MQTT topics.
 
-This allows the display firmware to remain:
+That keeps the firmware:
 
-* Lightweight
-* Efficient
-* Responsive
-* Easier to maintain
+- lightweight
+- efficient
+- responsive
+- easier to maintain
 
-Currently, Home Assistant performs much of the heavy lifting.
+In practice, upstream systems such as Home Assistant provide much of the heavy lifting.
 
 Examples include:
 
-* Daily minimum calculations
-* Daily maximum calculations
-* Trend determination
-* MQTT topic publishing
+- daily minimum calculations
+- daily maximum calculations
+- trend determination
+- topic publishing
 
-This means the display simply subscribes to:
+So the display subscribes to values like:
 
 ```text
 temperature
@@ -85,253 +83,254 @@ temperature_max
 temperature_trend
 ```
 
-rather than calculating these values itself.
+instead of calculating them itself.
 
-Advantages include:
-
-* Reduced RAM consumption
-* Lower CPU utilisation
-* Simpler firmware
-* Centralised business logic
-* Easier experimentation
-
-As the project evolves, Home Assistant may also provide:
-
-* Weather forecasts
-* Rain probability
-* Multi-day outlooks
-* Historical trend analysis
-* Sensor aggregation
-
-The long-term vision is to keep the display focused on presentation while upstream systems perform the computation.
+That means less RAM usage, lower CPU load, and simpler firmware.
 
 ---
 
-# Hardware
+## Hardware
 
 Current hardware platform:
 
-* ESP8266 (ESP-12E)
-* 2.4" ILI9341 TFT display
-* XPT2046 touch controller
-* MQTT-connected BME280 sensor nodes
+- ESP8266 (ESP-12E)
+- 2.4" ILI9341 TFT display
+- XPT2046 touch controller
+- MQTT-connected BME280 sensor nodes
 
 Display resolution:
 
-* 240 × 320 (portrait)
+- 240 × 320 (portrait)
 
-The touchscreen is currently unused but has been intentionally retained to support future navigation and configuration features.
-
----
-
-# Software Stack
-
-Development Environment:
-
-* Visual Studio Code
-* PlatformIO
-
-Core Libraries:
-
-* ESP8266 Arduino Core
-* MiniGrafx
-* ArduinoOTA
-* WiFiManager
-* EspMQTTClient
-
-Supporting Libraries:
-
-* Custom timezone helper library
-* Custom font resources
-* Weather icon resources
+The touchscreen is supported, but it is intentionally just one input option. The long-term goal is for the firmware to remain usable on hardware with or without touch.
 
 ---
 
-# Architecture
+## Software Stack
 
-## Current Project Structure
+Development environment:
+
+- Visual Studio Code
+- PlatformIO
+
+Core libraries:
+
+- ESP8266 Arduino Core
+- MiniGrafx
+- ArduinoOTA
+- WiFiManager
+- EspMQTTClient
+
+Supporting pieces:
+
+- custom timezone helper
+- custom fonts
+- weather icon resources
+
+---
+
+## Architecture
+
+### Current flow
+
+```text
+TouchController
+    ↓
+TouchManager
+    ↓
+InputManager
+    ↓
+InputEvent
+    ↓
+ScreenManager
+    ↓
+Current Screen
+    ↓
+DisplayManager
+```
+
+### Why this matters
+
+- `TouchController` talks to hardware
+- `TouchManager` translates physical touch into input events
+- `InputManager` aggregates input from multiple sources
+- `ScreenManager` routes events to the active screen
+- each screen decides what an input means in its own context
+
+That separation makes it easy to add future input sources such as:
+
+- rotary encoders
+- physical buttons
+- keyboards
+- mouse-like devices
+- remote or network-triggered actions
+
+### Current project structure
 
 ```text
 src/
 
-├── main.cpp
-
 ├── config/
-│   ├── settings.h
-│   └── secrets.h
-
-├── models/
-│   ├── SensorTile.h
-│   ├── SensorRepository.h
-│   └── SensorRepository.cpp
-
 ├── display/
-│   ├── DisplayManager.h
-│   └── DisplayManager.cpp
-
-├── screens/
-│   ├── WeatherScreen.h
-│   └── WeatherScreen.cpp
-
+├── input/
+├── models/
 ├── mqtt/
-│   ├── Topics.h
-│   ├── MqttManager.h
-│   └── MqttManager.cpp
-
-├── wifi/
-│   ├── WifiSetup.h
-│   └── WifiSetup.cpp
-
 ├── ota/
-│   ├── OtaManager.h
-│   └── OtaManager.cpp
-
+├── screens/
 ├── system/
-│   ├── SystemManager.h
-│   └── SystemManager.cpp
+├── touch/
+├── ui/
+└── wifi/
 ```
 
 ---
 
-## Application Flow
+## Screens
 
-```text
-main
- ├─ WifiSetup
- ├─ SystemManager
- ├─ SensorRepository
- ├─ OtaManager
- ├─ MqttManager
- ├─ DisplayManager
- └─ WeatherScreen
-```
+### WeatherScreen
 
----
+The main dashboard screen. It presents time, WiFi strength, and sensor tiles.
 
-## Responsibilities
+### CalibrationScreen
 
-| Module           | Responsibility                                   |
-| ---------------- | ------------------------------------------------ |
-| main.cpp         | Application orchestration only                   |
-| WifiSetup        | WiFi lifecycle management                        |
-| SystemManager    | Hostname and system helper functions             |
-| SensorRepository | Owns sensor definitions and runtime sensor state |
-| MqttManager      | Receives MQTT data and populates sensor state    |
-| DisplayManager   | TFT hardware abstraction                         |
-| WeatherScreen    | Presentation and UI logic                        |
-| OtaManager       | OTA lifecycle management                         |
+A guided touch calibration workflow. It collects four raw points, calculates calibration coefficients, and saves them for future boots.
 
-This architecture represents a significant improvement over the original monolithic implementation and provides a solid foundation for future growth.
+### BootScreen
+
+A boot progress screen that provides visual feedback while the firmware initialises.
 
 ---
 
-# Configuration
+## Configuration
 
-Configuration is intentionally centralised to make the project easy to adapt.
+Configuration is intentionally centralised to keep the project easy to adapt.
 
 Examples include:
 
-* MQTT broker configuration
-* Hostname prefix
-* Timezone settings
-* NTP servers
-* Display options
-* Feature flags
+- MQTT broker configuration
+- hostname prefix
+- timezone settings
+- NTP server
+- display pins
+- hardware feature flags
 
-The long-term goal is to allow users to adapt the dashboard to their own MQTT environments with minimal code changes.
+The goal is for the firmware to be easy to clone and adapt with minimal source changes.
+
+### Hardware flags
+
+The `config/HardwareConfig.h` file defines what the target hardware includes, for example:
+
+- display present or not
+- touch present or not
+- buttons present or not
+- encoder present or not
+- capacitive vs resistive touch
+
+This is what keeps the project reusable across different hardware combinations.
 
 ---
 
-# OTA Updates
+## OTA Updates
 
 The display supports wireless firmware updates using ArduinoOTA.
 
-Once connected to WiFi, PlatformIO can upload new firmware directly over the network without requiring a USB connection.
-
-This significantly simplifies ongoing development and maintenance.
+Once connected to WiFi, PlatformIO can upload new firmware directly over the network without a USB connection, which makes ongoing development and maintenance much easier.
 
 ---
 
-# Future Weather Forecasting
+## How the Project Evolved
 
-The current display focuses on presenting actual measurements gathered from local sensors.
+### Early version
 
-Future versions may incorporate weather forecasts generated by Home Assistant and displayed using the included weather icon framework.
+```text
+Arduino sketch
+├─ WiFi
+├─ MQTT
+├─ display drawing
+├─ OTA
+└─ configuration
+```
 
-The idea originated after a discussion with my son when a weather application confidently predicted a cloudy day, only for him to get thoroughly drenched on his way to an early-morning gym session.
+### Current version
 
-If we're going to display forecasts, we might as well see if we can do better.
+```text
+main.cpp
+├─ SystemManager
+├─ InputManager
+├─ TouchManager
+├─ ScreenManager
+├─ DisplayManager
+├─ WeatherScreen
+├─ CalibrationScreen
+└─ SensorRepository
+```
 
----
+That shift is the biggest change in the project so far.
 
-# Roadmap
-
-## Near-Term
-
-* Move MQTT topics into dedicated configuration modules
-* Improve tile configuration flexibility
-* Add diagnostic/status screen
-* Add touchscreen navigation
-* Introduce multiple screen support
-* Improve sensor definition abstraction
-
-## Mid-Term
-
-* Configurable dashboard layouts
-* Runtime display preferences
-* 12/24-hour clock selection
-* Forecast screen
-* Weather icon integration
-* Status and health monitoring
-
-## Long-Term
-
-* Generic MQTT dashboard framework
-* Web-based status interface
-* Browser-based OTA updates
-* Remote configuration
-* Ultra-low-power sensor ecosystem
-* Battery-powered environmental nodes
-* Additional sensor and telemetry types
+It is now closer to a reusable embedded architecture than a single-purpose sketch.
 
 ---
 
-# Future Sensor Nodes
+## Roadmap
 
-One of the long-term goals of this project is to replace the original display-equipped sensor nodes with ultra-low-power MQTT publishing devices.
+### Near-term
+
+- finalise calibration workflow
+- keep touch optional
+- introduce additional input sources
+- continue shrinking `main.cpp`
+- improve screen switching and navigation
+
+### Mid-term
+
+- settings screen
+- status screen
+- 12/24-hour preferences
+- forecast screen
+- weather icons
+- configurable layouts
+
+### Long-term
+
+- generic MQTT dashboard framework
+- browser-based configuration
+- remote status view
+- additional display types
+- battery-friendly sensor node ecosystem
+
+---
+
+## Future Sensor Nodes
+
+One long-term goal is to replace older always-on display sensor nodes with low-power MQTT publishing devices.
 
 The objective is to:
 
-* Eliminate always-on displays
-* Extend battery life dramatically
-* Reduce hardware complexity
-* Publish sensor data directly to MQTT
+- eliminate continuous display power draw
+- extend battery life
+- reduce hardware complexity
+- publish directly to MQTT
 
-The display dashboard then becomes the primary user interface for the entire sensor ecosystem.
-
-Future sensor nodes may operate with power consumption measured in microamps while sleeping, enabling months or potentially years of operation from rechargeable battery systems.
+The display dashboard then becomes the main interface for the whole ecosystem.
 
 ---
 
-# Contributing
+## Contributing
 
-Contributions, ideas, architectural discussions, and feature suggestions are always welcome.
+Contributions, ideas, architectural discussions, and feature suggestions are welcome.
 
-This project intentionally balances embedded efficiency with maintainable software design and aims to remain approachable for hobbyists while applying sound engineering principles.
+This project tries to balance embedded efficiency with maintainable software design while staying approachable for hobbyists and makers.
 
 ---
 
-# Acknowledgements
-
-This project builds upon the excellent work of the open-source community.
+## Acknowledgements
 
 Special thanks to the maintainers and contributors of:
 
-* PlatformIO
-* ESP8266 Arduino Core
-* MiniGrafx
-* WiFiManager
-* ArduinoOTA
-* EspMQTTClient
+- PlatformIO
+- ESP8266 Arduino Core
+- MiniGrafx
+- WiFiManager
+- ArduinoOTA
+- EspMQTTClient
 
-Without these projects, this dashboard would not exist.

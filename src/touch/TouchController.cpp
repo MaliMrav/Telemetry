@@ -1,6 +1,5 @@
 #include "TouchController.h"
 
-#include "../config/DefaultTouchCalibration.h"
 #include "../config/touch_config.h"
 
 TouchController::TouchController(
@@ -15,14 +14,6 @@ bool TouchController::begin()
 {
     touchScreen_.begin();
     return true;
-}
-
-void TouchController::loadFactoryDefaults()
-{
-    dx_ = DefaultTouchCalibration::DX;
-    dy_ = DefaultTouchCalibration::DY;
-    ax_ = DefaultTouchCalibration::AX;
-    ay_ = DefaultTouchCalibration::AY;
 }
 
 bool TouchController::loadCalibration()
@@ -66,7 +57,7 @@ bool TouchController::calculateCalibration(const CalibrationData& data)
     const float bottomX =
         (data.bottomLeft.x + data.bottomRight.x) * 0.5f;
 
-    const float rawWidth = leftY - rightY;
+    const float rawWidth  = leftY - rightY;
     const float rawHeight = bottomX - topX;
 
     if (rawWidth <= 0.0f || rawHeight <= 0.0f)
@@ -103,38 +94,6 @@ bool TouchController::saveCalibration()
 bool TouchController::isTouched()
 {
     return touchScreen_.touched();
-}
-
-bool TouchController::isTouched(uint16_t debounceMs)
-{
-    if (!touchScreen_.touched())
-    {
-        return false;
-    }
-
-    if (millis() - lastTouched_ < debounceMs)
-    {
-        return false;
-    }
-
-    lastTouched_ = millis();
-    return true;
-}
-
-bool TouchController::getTouch(
-    int16_t& x,
-    int16_t& y,
-    uint16_t debounceMs)
-{
-    if (!isTouched(debounceMs))
-    {
-        return false;
-    }
-
-    TS_Point p = getPoint();
-    x = p.x;
-    y = p.y;
-    return true;
 }
 
 TS_Point TouchController::getRawPoint()

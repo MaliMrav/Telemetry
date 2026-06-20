@@ -19,42 +19,14 @@ void TouchManager::setMode(
 {
     mode_ = mode;
     wasTouched_ = false;
+    lastEventMs_ = 0;
 }
 
 void TouchManager::update()
 {
-    if (mode_ == Mode::Calibration)
-    {
-        if (!controller_.isTouched(TouchConfig::DEBOUNCE_MS))
-        {
-            wasTouched_ = false;
-            return;
-        }
+    const bool touched = controller_.isTouched();
 
-        if (wasTouched_)
-        {
-            return;
-        }
-
-        const TS_Point raw = controller_.getRawPoint();
-
-        InputManager::trigger(
-            InputEvent{
-                InputAction::TAP,
-                millis(),
-                false,
-                raw.x,
-                raw.y
-            });
-
-        wasTouched_ = true;
-        return;
-    }
-
-    int16_t x = 0;
-    int16_t y = 0;
-
-    if (!controller_.getTouch(x, y))
+    if (!touched)
     {
         wasTouched_ = false;
         return;
@@ -65,14 +37,25 @@ void TouchManager::update()
         return;
     }
 
+    if (millis() - lastEventMs_ < TouchConfig::DEBOUNCE_MS)
+    {
+        return;
+    }
+
+    const TS_Point point =
+        (mode_ == Mode::Calibration) ?
+            controller_.getRawPoint() :
+            controller_.getPoint();
+
     InputManager::trigger(
         InputEvent{
             InputAction::TAP,
             millis(),
             false,
-            x,
-            y
+            point.x,
+            point.y
         });
 
     wasTouched_ = true;
+    lastEventMs_ = millis();
 }
