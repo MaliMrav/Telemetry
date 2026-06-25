@@ -12,7 +12,7 @@
 #include "../input/InputAction.h"
 #include "../input/InputEvent.h"
 #include "../input/InputManager.h"
-#include "../mqtt/MqttManager.h"
+#include "../data/IDataSource.h"
 #include "../models/SensorRepository.h"
 #include "../ota/OtaManager.h"
 #include "../screens/BootScreen.h"
@@ -34,7 +34,7 @@ namespace
     WeatherScreen* s_weatherScreen = nullptr;
     CalibrationScreen* s_calibrationScreen = nullptr;
     OtaManager* s_ota = nullptr;
-    MqttManager* s_mqtt = nullptr;
+    IDataSource* s_dataSource = nullptr;
 
     bool s_calibrationMode = false;
     uint32_t s_calibrationCompleteSince = 0;
@@ -117,12 +117,12 @@ namespace
         }
 
         bootStatus(
-            "Starting MQTT",
+            "Starting data source",
             BootProgress::MQTT_INIT);
 
-        if (s_mqtt)
+        if (s_dataSource)
         {
-            s_mqtt->begin();
+            s_dataSource->begin();
         }
     }
 
@@ -140,10 +140,10 @@ namespace
 
             if (s_touchManager)
             {
-                s_touchManager->setMode(
+                s_touchManager->setProfile(
                     s_calibrationMode ?
-                        TouchManager::Mode::Calibration :
-                        TouchManager::Mode::Normal);
+                        TouchManager::Profile::Calibration :
+                        TouchManager::Profile::Generic);
             }
 
             if (s_calibrationMode && s_calibrationScreen && s_screenManager)
@@ -201,15 +201,15 @@ namespace SystemManager
     }
 
     void begin(
-        DisplayManager& display,
-        TouchController& touchController,
-        TouchManager& touchManager,
-        ScreenManager& screenManager,
-        BootScreen& bootScreen,
-        WeatherScreen& weatherScreen,
+        DisplayManager&    display,
+        TouchController&   touchController,
+        TouchManager&      touchManager,
+        ScreenManager&     screenManager,
+        BootScreen&        bootScreen,
+        WeatherScreen&     weatherScreen,
         CalibrationScreen& calibrationScreen,
-        OtaManager& ota,
-        MqttManager& mqtt)
+        OtaManager&        ota,
+        IDataSource&       dataSource)
     {
         s_display = &display;
         s_touchController = &touchController;
@@ -218,8 +218,10 @@ namespace SystemManager
         s_bootScreen = &bootScreen;
         s_weatherScreen = &weatherScreen;
         s_calibrationScreen = &calibrationScreen;
-        s_ota = &ota;
-        s_mqtt = &mqtt;
+        s_ota        = &ota;
+        s_dataSource = &dataSource;
+
+        s_screenManager->bindTouchManager(s_touchManager);
 
         if (s_display)
         {
@@ -278,9 +280,9 @@ namespace SystemManager
             s_ota->loop();
         }
 
-        if (s_mqtt)
+        if (s_dataSource)
         {
-            s_mqtt->loop();
+            s_dataSource->loop();
         }
 
         InputManager::update();
@@ -311,7 +313,7 @@ namespace SystemManager
 
                 if (s_touchManager)
                 {
-                    s_touchManager->setMode(TouchManager::Mode::Normal);
+                    s_touchManager->setProfile(TouchManager::Profile::Generic);
                 }
 
                 if (s_screenManager && s_weatherScreen)

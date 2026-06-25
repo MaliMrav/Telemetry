@@ -17,6 +17,11 @@ public:
     void update() override;
     void onInput(const InputEvent& event) override;
 
+    ScreenKind kind() const override
+    {
+        return ScreenKind::Calibration;
+    }
+
     bool isFinished() const;
     bool calibrationSaved() const;
 

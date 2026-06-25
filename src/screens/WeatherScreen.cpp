@@ -4,7 +4,6 @@
 #include "../models/SensorRepository.h"
 #include "../config/settings.h"
 #include "ScreenConfig.h"
-#include "../ui/ScreenZones.h"
 
 #include <ArialRounded.h>
 #include <ESP8266WiFi.h>
@@ -32,10 +31,26 @@ void WeatherScreen::update()
 
 void WeatherScreen::onInput(const InputEvent& event)
 {
-    if (event.action == InputAction::TAP &&
-        ScreenZones::isInHeader(event.x, event.y))
+    switch (event.action)
     {
-        use12HourClock_ = !use12HourClock_;
+        case InputAction::TAP:
+            use12HourClock_ = !use12HourClock_;
+            break;
+
+        case InputAction::PREVIOUS_SCREEN:
+            // previous page
+            break;
+
+        case InputAction::NEXT_SCREEN:
+            // next page
+            break;
+
+        case InputAction::SELECT:
+            // tile-specific action later
+            break;
+
+        default:
+            break;
     }
 }
 

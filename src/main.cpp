@@ -16,7 +16,7 @@
 #include "system/SystemManager.h"
 
 #include "ota/OtaManager.h"
-#include "mqtt/MqttManager.h"
+#include "mqtt/MqttDataSource.h"
 
 //=============================================================================
 // Global objects
@@ -39,7 +39,7 @@ CalibrationScreen calibrationScreen(
     touchController);
 
 OtaManager ota;
-MqttManager mqtt;
+MqttDataSource mqttData;
 
 //=============================================================================
 // Arduino setup
@@ -58,7 +58,7 @@ void setup()
         weatherScreen,
         calibrationScreen,
         ota,
-        mqtt);
+        mqttData);
 }
 
 //=============================================================================

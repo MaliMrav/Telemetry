@@ -16,6 +16,11 @@ public:
 
     void onInput(const InputEvent& event) override;
 
+    ScreenKind kind() const override
+    {
+        return ScreenKind::Weather;
+    }
+
 private:
     DisplayManager& display_;
 

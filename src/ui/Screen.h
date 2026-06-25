@@ -2,6 +2,15 @@
 
 #include "../input/InputEvent.h"
 
+enum class ScreenKind
+{
+    Generic,
+    Boot,
+    Weather,
+    Status,
+    Calibration
+};
+
 class Screen
 {
 public:
@@ -15,5 +24,10 @@ public:
     virtual void onInput(
         const InputEvent& event)
     {
+    }
+
+    virtual ScreenKind kind() const
+    {
+        return ScreenKind::Generic;
     }
 };

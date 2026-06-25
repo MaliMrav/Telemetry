@@ -10,24 +10,23 @@ class BootScreen;
 class WeatherScreen;
 class CalibrationScreen;
 class OtaManager;
-class MqttManager;
+class IDataSource;
 
 namespace SystemManager
 {
-    bool mountFileSystem();
-
+    bool   mountFileSystem();
     String getHostname();
 
     void begin(
-        DisplayManager& display,
-        TouchController& touchController,
-        TouchManager& touchManager,
-        ScreenManager& screenManager,
-        BootScreen& bootScreen,
-        WeatherScreen& weatherScreen,
+        DisplayManager&    display,
+        TouchController&   touchController,
+        TouchManager&      touchManager,
+        ScreenManager&     screenManager,
+        BootScreen&        bootScreen,
+        WeatherScreen&     weatherScreen,
         CalibrationScreen& calibrationScreen,
-        OtaManager& ota,
-        MqttManager& mqtt);
+        OtaManager&        ota,
+        IDataSource&       dataSource);
 
     void update();
 }

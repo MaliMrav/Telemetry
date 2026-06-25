@@ -6,6 +6,7 @@
 #include "../input/InputAction.h"
 #include "../input/InputEvent.h"
 #include "../input/InputManager.h"
+#include "../ui/ScreenZones.h"
 
 TouchManager::TouchManager(
     TouchController& controller)
@@ -14,19 +15,31 @@ TouchManager::TouchManager(
 {
 }
 
-void TouchManager::setMode(
-    Mode mode)
+void TouchManager::setProfile(
+    Profile profile)
 {
-    mode_ = mode;
+    profile_ = profile;
     wasTouched_ = false;
     lastEventMs_ = 0;
 }
 
+void TouchManager::emitEvent(
+    InputAction action,
+    const TS_Point& point)
+{
+    InputManager::trigger(
+        InputEvent{
+            action,
+            millis(),
+            false,
+            static_cast<int16_t>(point.x),
+            static_cast<int16_t>(point.y)
+        });
+}
+
 void TouchManager::update()
 {
-    const bool touched = controller_.isTouched();
-
-    if (!touched)
+    if (!controller_.isTouched())
     {
         wasTouched_ = false;
         return;
@@ -43,18 +56,75 @@ void TouchManager::update()
     }
 
     const TS_Point point =
-        (mode_ == Mode::Calibration) ?
+        (profile_ == Profile::Calibration) ?
             controller_.getRawPoint() :
             controller_.getPoint();
 
-    InputManager::trigger(
-        InputEvent{
-            InputAction::TAP,
-            millis(),
-            false,
-            point.x,
-            point.y
-        });
+    switch (profile_)
+    {
+        case Profile::Weather:
+        {
+            if (ScreenZones::isInHeader(point.x, point.y))
+            {
+                emitEvent(InputAction::TAP, point);
+            }
+            else if (ScreenZones::isInLeftEdge(point.x, point.y))
+            {
+                emitEvent(InputAction::PREVIOUS_SCREEN, point);
+            }
+            else if (ScreenZones::isInRightEdge(point.x, point.y))
+            {
+                emitEvent(InputAction::NEXT_SCREEN, point);
+            }
+            else
+            {
+                emitEvent(InputAction::SELECT, point);
+            }
+            break;
+        }
+
+        case Profile::Status:
+        {
+            if (ScreenZones::isInHeader(point.x, point.y))
+            {
+                emitEvent(InputAction::BACK, point);
+            }
+            else if (ScreenZones::isInLeftEdge(point.x, point.y))
+            {
+                emitEvent(InputAction::PREVIOUS_SCREEN, point);
+            }
+            else if (ScreenZones::isInRightEdge(point.x, point.y))
+            {
+                emitEvent(InputAction::NEXT_SCREEN, point);
+            }
+            else if (ScreenZones::isInContentUp(point.x, point.y))
+            {
+                emitEvent(InputAction::SCROLL_UP, point);
+            }
+            else if (ScreenZones::isInContentDown(point.x, point.y))
+            {
+                emitEvent(InputAction::SCROLL_DOWN, point);
+            }
+            else
+            {
+                emitEvent(InputAction::SELECT, point);
+            }
+            break;
+        }
+
+        case Profile::Calibration:
+        {
+            emitEvent(InputAction::TAP, point);
+            break;
+        }
+
+        case Profile::Generic:
+        default:
+        {
+            emitEvent(InputAction::TAP, point);
+            break;
+        }
+    }
 
     wasTouched_ = true;
     lastEventMs_ = millis();
