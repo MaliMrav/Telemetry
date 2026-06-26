@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [2.0.0] - 2025-01-XX - Telemetry Framework
+## [2.0.0] - 2026-06-26 - Telemetry Framework
 
 ### Project Rebrand
 
