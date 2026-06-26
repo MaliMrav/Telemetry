@@ -41,6 +41,8 @@ The first monitored locations were:
 
 Over time, the project grew from a weather display into something larger: a reusable MQTT-driven embedded dashboard framework capable of showing many kinds of data.
 
+At the same time, the codebase became a software engineering exercise in designing maintainable embedded systems using modern tooling and architectural practices.
+
 ---
 
 ## Development Journey
@@ -60,7 +62,7 @@ A conscious decision was made to modernise the project and move to:
 
 The goal was not just to reorganise files, but to build a codebase that could keep growing without becoming difficult to understand or maintain.
 
-This version is the result of that refactor journey.
+This version is the result of that refactor journey — transforming from a single-purpose Arduino sketch into a reusable embedded architecture that balances efficiency with maintainability while remaining approachable for hobbyists and makers.
 
 ---
 
@@ -99,7 +101,17 @@ temperature_trend
 
 instead of calculating them itself.
 
-That means less RAM usage, lower CPU load, and simpler firmware.
+Advantages include:
+
+- reduced RAM consumption
+- lower CPU utilisation
+- simpler firmware
+- centralised business logic
+- easier experimentation
+
+As the project evolves, upstream systems may also provide weather forecasts, rain probability, multi-day outlooks, historical trend analysis, and sensor aggregation.
+
+The long-term vision is to keep the display focused on presentation while upstream systems perform the computation.
 
 ---
 
@@ -146,7 +158,7 @@ Supporting pieces:
 
 ## Architecture
 
-### Current flow
+### Input flow
 
 ```text
 TouchController
@@ -205,15 +217,60 @@ src/
 
 ### WeatherScreen
 
-The main dashboard screen. It presents time, WiFi strength, and sensor tiles.
+The main dashboard screen. It presents:
+
+- Current time with 12/24-hour toggle (tap header to switch)
+- Date display
+- WiFi signal strength indicator
+- Sensor tile grid showing:
+  - Current value
+  - Daily min/max
+  - Trend arrows (up/down/flat)
+  - Color-coded by sensor type
+
+WeatherScreen reads from `SensorRepository` only — it has no knowledge of where data came from (MQTT, HTTP, local sensor, etc.).
 
 ### CalibrationScreen
 
-A guided touch calibration workflow. It collects four raw points, calculates calibration coefficients, and saves them for future boots.
+A guided touch calibration workflow. It:
+
+- Collects four corner touch points
+- Calculates calibration coefficients
+- Saves coefficients to filesystem
+- Provides visual feedback during the process
+- Automatically transitions to WeatherScreen when complete
+
+Calibration can be forced via `config_override.h` or triggered automatically if no saved calibration exists.
 
 ### BootScreen
 
-A boot progress screen that provides visual feedback while the firmware initialises.
+A boot progress screen that provides visual feedback during firmware initialisation:
+
+- Displays progress bar
+- Shows current boot stage
+- Reports percentage complete
+- Helps diagnose boot failures
+
+Boot stages include:
+- Filesystem mount
+- WiFi connection
+- Time synchronisation
+- Sensor initialisation
+- OTA setup
+- Data source connection
+
+### StatusScreen
+
+A work-in-progress status and diagnostics screen intended to show:
+
+- WiFi signal strength details
+- MQTT connection state
+- Firmware version
+- System uptime
+- IP address
+- Memory usage
+
+Input handlers are wired; rendering implementation is next.
 
 ---
 
@@ -252,63 +309,98 @@ Once connected to WiFi, PlatformIO can upload new firmware directly over the net
 
 ## How the Project Evolved
 
-### Early version
+### Early version (Arduino IDE)
 
 ```text
-Arduino sketch
-├─ WiFi
-├─ MQTT
-├─ display drawing
-├─ OTA
-└─ configuration
+Single .ino file
+├─ WiFi setup
+├─ MQTT callbacks
+├─ Display drawing
+├─ OTA handling
+└─ Configuration
 ```
 
-### Current version
+Everything lived in one file. Adding features meant scrolling through hundreds of lines. Changing one thing risked breaking another.
+
+### Current version (PlatformIO + modular architecture)
 
 ```text
 main.cpp
-├─ SystemManager
-├─ InputManager
+├─ DisplayManager
+├─ TouchController
 ├─ TouchManager
 ├─ ScreenManager
-├─ DisplayManager
-├─ WeatherScreen
-├─ CalibrationScreen
+│   ├─ BootScreen
+│   ├─ WeatherScreen
+│   ├─ CalibrationScreen
+│   └─ StatusScreen (in progress)
+├─ InputManager
+├─ SystemManager
+├─ OtaManager
+├─ MqttDataSource (implements IDataSource)
 └─ SensorRepository
 ```
 
-That shift is the biggest change in the project so far.
+Each component has a single responsibility. `main.cpp` is now just 60 lines of object construction and delegation.
 
-It is now closer to a reusable embedded architecture than a single-purpose sketch.
+That shift represents the biggest change in the project:
+
+- From a single-purpose sketch to a reusable embedded architecture
+- From tightly coupled code to dependency injection and interfaces
+- From implicit dependencies to explicit construction
+- From global state to managed references
+
+The architecture now demonstrates:
+
+- **Single Responsibility** — each module owns one concern
+- **Dependency Inversion** — `SystemManager` depends on `IDataSource`, not `MqttDataSource`
+- **Open/Closed** — extend with new screens or data sources without modifying existing code
+- **Testability** — no globals, explicit dependencies, mockable interfaces
 
 ---
 
 ## Roadmap
 
+### Completed
+
+- ✅ Modular architecture with clear separation of concerns
+- ✅ Input abstraction layer supporting multiple sources
+- ✅ Touch calibration workflow with filesystem persistence
+- ✅ Boot progress screen with visual feedback
+- ✅ Weather dashboard with sensor tiles, trends, and min/max
+- ✅ 12/24-hour clock toggle
+- ✅ Data source abstraction (IDataSource interface)
+- ✅ MQTT data source implementation
+- ✅ Touch input optional (can be disabled via config)
+- ✅ OTA wireless updates
+
 ### Near-term
 
-- finalise calibration workflow
-- keep touch optional
-- introduce additional input sources
-- continue shrinking `main.cpp`
-- improve screen switching and navigation
+- Complete StatusScreen rendering (input handlers done)
+- Implement screen navigation (previous/next)
+- Add multi-page support for large sensor sets
+- Introduce rotary encoder input source
+- Add physical button input source
 
 ### Mid-term
 
-- settings screen
-- status screen
-- 12/24-hour preferences
-- forecast screen
-- weather icons
-- configurable layouts
+- SettingsScreen implementation
+- Configurable tile layouts
+- Forecast screen with weather icons
+- Runtime display preferences (save to filesystem)
+- Data staleness tracking and indication
+- Change notifications for efficient redraws
 
 ### Long-term
 
-- generic MQTT dashboard framework
-- browser-based configuration
-- remote status view
-- additional display types
-- battery-friendly sensor node ecosystem
+- Generic MQTT dashboard framework
+- Browser-based configuration interface
+- Web-based status and monitoring
+- ESP32 support and testing
+- Integrated dev board support (CYD, M5Stack, LilyGO)
+- Alternative display drivers (SSD1306 OLED, ST7735 TFT)
+- Battery-friendly sensor node ecosystem
+- Multiple simultaneous data sources (MQTT + local I2C sensors)
 
 ---
 
@@ -319,11 +411,21 @@ One long-term goal is to replace older always-on display sensor nodes with low-p
 The objective is to:
 
 - eliminate continuous display power draw
-- extend battery life
+- extend battery life dramatically (months or years on rechargeable batteries)
 - reduce hardware complexity
 - publish directly to MQTT
 
-The display dashboard then becomes the main interface for the whole ecosystem.
+The display dashboard then becomes the main interface for the whole ecosystem, with sensor nodes operating at microamp-level power consumption while sleeping.
+
+---
+
+## Project History
+
+This project was previously known as **ESP8266_TFT_MiniGrafx_Weather_UI**.
+
+The rebrand to **Telemetry** reflects its evolution from a weather-specific display into a general-purpose embedded dashboard framework suitable for any MQTT-driven telemetry application.
+
+See `README v1.0.md` for the original documentation from the earlier architecture.
 
 ---
 
@@ -331,7 +433,13 @@ The display dashboard then becomes the main interface for the whole ecosystem.
 
 Contributions, ideas, architectural discussions, and feature suggestions are welcome.
 
-This project tries to balance embedded efficiency with maintainable software design while staying approachable for hobbyists and makers.
+This project intentionally balances:
+
+- **Embedded efficiency** — constrained hardware, minimal overhead
+- **Maintainable design** — SOLID principles, clear boundaries
+- **Approachability** — documented patterns, teaching-focused code
+
+Whether you're a hobbyist learning embedded development or an experienced engineer exploring ESP architecture patterns, your input is valued.
 
 ---
 
@@ -345,4 +453,6 @@ Special thanks to the maintainers and contributors of:
 - WiFiManager
 - ArduinoOTA
 - PubSubClient
+
+Without these projects, this framework would not exist.
 
