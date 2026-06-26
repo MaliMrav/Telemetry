@@ -1,14 +1,28 @@
-# ESP8266 MQTT Weather Display
+# Telemetry
 
-> **This project is as much an architecture and UX exercise as it is a weather display.**
+**Embedded telemetry framework for ESP microcontrollers**
+
+> An architecture-focused framework for building modular, maintainable MQTT-driven dashboards on ESP8266, ESP32, and compatible hardware.
 >
-> What began as a simple MQTT-powered dashboard has evolved into a reusable embedded UI framework that explores modular design, separation of concerns, and maintainable use of constrained ESP8266 hardware.
->
-> The display node intentionally does very little computation itself. Wherever practical, processing is delegated upstream so the ESP8266 can stay focused on what it does best: consume data, present it clearly, and remain reliable.
+> What began as a weather display has evolved into a reusable embedded UI framework that demonstrates clean separation of concerns, hardware abstraction, and extensible design patterns — all running on constrained microcontroller hardware.
 
 ---
 
-## Why This Project Exists
+## What This Is
+
+Telemetry is a framework for building embedded dashboards that visualize sensor data, IoT telemetry, or any MQTT-published information.
+
+It's designed to be:
+- **Learned from** — clear architecture, documented patterns, teaching-focused code
+- **Extended** — add new screens, data sources, or input devices without modifying core code
+- **Ported** — works on ESP8266, ESP32, and integrated solutions like CYD displays
+- **Maintained** — modular structure that scales beyond a single-file sketch
+
+**Current reference implementation:** Weather dashboard on ESP8266 with ILI9341 TFT display and XPT2046 touch.
+
+---
+
+## Why Telemetry Exists
 
 This project started with a practical problem.
 
@@ -89,20 +103,21 @@ That means less RAM usage, lower CPU load, and simpler firmware.
 
 ---
 
-## Hardware
+## Supported Hardware
 
-Current hardware platform:
+**Current reference platform:**
+- **Microcontroller:** ESP8266 (ESP-12E)
+- **Display:** 2.4" ILI9341 TFT (240×320, SPI)
+- **Touch:** XPT2046 resistive touch controller
+- **Data sources:** MQTT-connected BME280 sensor nodes
 
-- ESP8266 (ESP-12E)
-- 2.4" ILI9341 TFT display
-- XPT2046 touch controller
-- MQTT-connected BME280 sensor nodes
+**Designed to support:**
+- ESP32, ESP32-S2/S3/C3 (future)
+- Integrated dev boards (CYD, M5Stack, LilyGO) (future)
+- Alternative displays (SSD1306 OLED, ST7735 TFT) via driver config
+- Multiple input devices (rotary encoder, physical buttons, capacitive touch)
 
-Display resolution:
-
-- 240 × 320 (portrait)
-
-The touchscreen is supported, but it is intentionally just one input option. The long-term goal is for the firmware to remain usable on hardware with or without touch.
+See [docs/DISPLAY_CONFIGURATION.md](docs/DISPLAY_CONFIGURATION.md) for porting to different displays.
 
 ---
 
@@ -115,11 +130,11 @@ Development environment:
 
 Core libraries:
 
-- ESP8266 Arduino Core
-- MiniGrafx
-- ArduinoOTA
-- WiFiManager
-- EspMQTTClient
+- ESP8266 Arduino Core (ESP32 compatible)
+- MiniGrafx (display driver abstraction)
+- PubSubClient (MQTT client)
+- ArduinoOTA (wireless firmware updates)
+- WiFiManager (captive portal WiFi setup)
 
 Supporting pieces:
 
@@ -169,18 +184,19 @@ That separation makes it easy to add future input sources such as:
 
 ```text
 src/
-
-├── config/
-├── display/
-├── input/
-├── models/
-├── mqtt/
-├── ota/
-├── screens/
-├── system/
-├── touch/
-├── ui/
-└── wifi/
+├── config/          Configuration system
+│   └── display/     Display driver configs
+├── data/            Data source abstraction
+├── display/         Display manager
+├── input/           Input event pipeline
+├── models/          Data models and repository
+├── mqtt/            MQTT data source
+├── ota/             OTA update manager
+├── screens/         UI screens
+├── system/          System lifecycle manager
+├── touch/           Touch hardware controller
+├── ui/              Screen manager and base classes
+└── wifi/            WiFi connection manager
 ```
 
 ---
