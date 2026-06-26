@@ -232,17 +232,13 @@ Examples include:
 
 The goal is for the firmware to be easy to clone and adapt with minimal source changes.
 
-### Hardware flags
+**To configure your own hardware:**
+1. Copy `src/config/secrets.example.h` to `src/config/secrets.h` and fill in WiFi/MQTT/OTA credentials
+2. Open `src/config/config_override.h` and set your timezone, display type, and pin assignments
+3. Build and flash
 
-The `config/HardwareConfig.h` file defines what the target hardware includes, for example:
-
-- display present or not
-- touch present or not
-- buttons present or not
-- encoder present or not
-- capacitive vs resistive touch
-
-This is what keeps the project reusable across different hardware combinations.
+See [docs/DISPLAY_CONFIGURATION.md](docs/DISPLAY_CONFIGURATION.md) for display-specific setup.
+See [docs/DATA_LAYER_ARCHITECTURE.md](docs/DATA_LAYER_ARCHITECTURE.md) for adding new data sources.
 
 ---
 
@@ -348,5 +344,5 @@ Special thanks to the maintainers and contributors of:
 - MiniGrafx
 - WiFiManager
 - ArduinoOTA
-- EspMQTTClient
+- PubSubClient
 
