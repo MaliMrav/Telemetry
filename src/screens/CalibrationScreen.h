@@ -1,5 +1,14 @@
 #pragma once
 
+// CalibrationScreen guides the user through a four-point touch calibration.
+//
+// It presents crosshairs at each corner in sequence, captures the raw
+// touch coordinates via onInput(), then passes the four points to
+// TouchController::calibrate() which calculates and saves the coefficients.
+//
+// SystemManager monitors isFinished() and calibrationSaved() to know
+// when to transition to the main WeatherScreen.
+
 #include "../ui/Screen.h"
 #include "../display/DisplayManager.h"
 #include "../touch/TouchController.h"

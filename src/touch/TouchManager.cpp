@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#include "../config/touch_config.h"
+#include "../config/config.h"
 #include "../input/InputAction.h"
 #include "../input/InputEvent.h"
 #include "../input/InputManager.h"

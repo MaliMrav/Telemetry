@@ -1,6 +1,6 @@
 #include "TouchController.h"
 
-#include "../config/touch_config.h"
+#include "../config/config.h"
 
 TouchController::TouchController(
     uint8_t csPin,

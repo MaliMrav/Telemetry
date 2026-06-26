@@ -1,5 +1,20 @@
 #pragma once
 
+// TouchManager translates raw touch hardware events into abstract InputEvents.
+//
+// Responsibilities:
+//   - poll TouchController each loop
+//   - apply debounce to prevent event flooding
+//   - interpret touch coordinates using the active Profile
+//   - emit InputActions via InputManager::trigger()
+//
+// Profile determines how screen zones map to actions. Each screen context
+// (Weather, Status, Calibration) gets its own profile so the same physical
+// touch can mean different things on different screens.
+//
+// It implements IInputSource so InputManager treats it identically
+// to any other input device (button, encoder, etc.).
+
 #include "TouchController.h"
 #include "../input/InputSource.h"
 #include "../input/InputAction.h"

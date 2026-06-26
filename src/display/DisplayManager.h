@@ -1,5 +1,17 @@
 #pragma once
 
+// DisplayManager wraps MiniGrafx and the ILI9341 SPI driver behind a
+// stable, display-agnostic interface.
+//
+// Responsibilities:
+//   - initialise the TFT hardware and backlight
+//   - expose drawing primitives (strings, rects, lines, pixels)
+//   - manage the off-screen framebuffer and commit it to the display
+//
+// Screens and UI components talk to DisplayManager only — they have no
+// direct dependency on MiniGrafx or the underlying driver. This makes
+// it straightforward to swap the display driver without touching screen code.
+
 #include <Arduino.h>
 #include <MiniGrafx.h>
 #include <ILI9341_SPI.h>

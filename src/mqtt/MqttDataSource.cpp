@@ -3,7 +3,7 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
-#include "../config/settings.h"
+#include "../config/config.h"
 #include "../models/SensorRepository.h"
 #include "../mqtt/TopicMappings.h"
 
@@ -71,7 +71,7 @@ void MqttDataSource::begin()
 {
     mqttClient.setServer(MQTT::SERVER, MQTT::PORT);
     mqttClient.setCallback(onMessage);
-    mqttClient.setKeepAlive(30);
+    mqttClient.setKeepAlive(MQTT::KEEPALIVE);
 }
 
 void MqttDataSource::loop()
@@ -83,7 +83,7 @@ void MqttDataSource::loop()
     }
 
     const unsigned long now = millis();
-    if (now - lastReconnectAttempt < 5000) return;
+    if (now - lastReconnectAttempt < MQTT::RECONNECT_MS) return;
 
     lastReconnectAttempt = now;
     if (reconnect())

@@ -1,5 +1,16 @@
 #pragma once
 
+// SensorRepository is the single source of truth for all sensor data.
+//
+// Responsibilities:
+//   - own the array of SensorTiles (one per SensorId)
+//   - expose a typed write API so data sources update values by SensorId
+//   - expose a read API for screens to retrieve tiles for display
+//
+// The write API (setValue, setMin, setMax, setTrend) is the only legitimate
+// way for data sources to mutate tile state. Direct array access from
+// outside this module is intentionally not supported.
+
 #include <Arduino.h>
 #include "SensorTile.h"
 #include "SensorIds.h"

@@ -1,5 +1,11 @@
 #pragma once
 
+// ScreenConfig holds layout constants for the WeatherScreen tile grid.
+//
+// Centralising these values makes it straightforward to adapt the layout
+// for different display sizes or tile counts without hunting through
+// rendering code. All pixel offsets, margins, and gaps are defined here.
+
 #include <Arduino.h>
 
 namespace ScreenConfig {

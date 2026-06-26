@@ -1,7 +1,17 @@
 #pragma once
+
+// Topics defines all MQTT topic strings used by this firmware.
+//
+// Topics are organised by location and measurement type using nested
+// namespaces. This makes the mapping between physical sensors and
+// their broker topics explicit and easy to audit.
+//
+// These strings are referenced only from TopicMappings.cpp.
+// Changing a topic requires a change here only.
+
 // =====================================================
 // MQTT Topics
-// =====================================================  
+// =====================================================
 namespace Topics {
 
   namespace Kitchen {

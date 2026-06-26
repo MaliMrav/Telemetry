@@ -1,5 +1,17 @@
 #pragma once
 
+// TouchController owns the XPT2046 hardware and all calibration logic.
+//
+// Responsibilities:
+//   - initialise the touchscreen hardware
+//   - load and save calibration coefficients from LittleFS
+//   - calculate calibration coefficients from four sampled corner points
+//   - report whether the screen is currently touched
+//   - return raw (uncalibrated) or mapped (calibrated) touch coordinates
+//
+// It has no knowledge of input events, screens, or display.
+// TouchManager is the only caller of this class during normal operation.
+
 #include <Arduino.h>
 #include <LittleFS.h>
 #include <SPI.h>

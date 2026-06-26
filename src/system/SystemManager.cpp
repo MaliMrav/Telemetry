@@ -1,12 +1,9 @@
 #include "SystemManager.h"
 
+#include "../config/config.h"
+
 #include <ESP8266WiFi.h>
 #include <LittleFS.h>
-
-#include "../config/BootProgress.h"
-#include "../config/CalibrationConfig.h"
-#include "../config/HardwareConfig.h"
-#include "../config/settings.h"
 
 #include "../display/DisplayManager.h"
 #include "../input/InputAction.h"
@@ -94,7 +91,7 @@ namespace
             BootProgress::TIME_SYNC);
 
         configTime(
-            TimeConfig::TIMEZONE.c_str(),
+            TimeConfig::TIMEZONE,
             TimeConfig::NTP_SERVER);
     }
 
@@ -176,7 +173,7 @@ namespace SystemManager
 {
     String getHostname()
     {
-        return String(System::HOSTNAME) +
+        return String(System::HOSTNAME_PREFIX) +
                String(ESP.getChipId(), HEX);
     }
 

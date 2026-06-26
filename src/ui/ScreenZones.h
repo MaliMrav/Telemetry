@@ -1,5 +1,15 @@
 #pragma once
 
+// ScreenZones divides the display into named hit regions.
+//
+// TouchManager uses these zones to translate a touch coordinate into
+// a semantic InputAction without any screen needing to know about
+// pixel boundaries. Zones are defined once here and reused across
+// all touch profiles.
+//
+// Adjusting zone boundaries (e.g. a wider edge swipe area) requires
+// a change in this file only.
+
 #include <Arduino.h>
 
 namespace ScreenZones

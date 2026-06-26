@@ -1,10 +1,10 @@
 #include "OtaManager.h"
 #include <ArduinoOTA.h>
-#include "../config/secrets.h"
+#include "../config/config.h"
 
 void OtaManager::begin(const char* hostname) {
   ArduinoOTA.setHostname(hostname);
-  ArduinoOTA.setPasswordHash(OtaSecrets::PASSWORD_HASH);
+  ArduinoOTA.setPasswordHash(OtaConfig::PASSWORD_HASH);
 
   ArduinoOTA.onStart([]() {
     String type = (ArduinoOTA.getCommand() == U_FLASH) ? "sketch" : "filesystem";

@@ -1,5 +1,12 @@
 #pragma once
 
+// InputEvent is the unit of communication between input sources and screens.
+//
+// It carries the abstract action, a timestamp, optional coordinates (for
+// touch-based actions), and a repeat flag for held inputs.
+// All input sources produce InputEvents; all screens consume them.
+// Neither side needs to know anything about the other.
+
 #include <Arduino.h>
 #include "InputAction.h"
 

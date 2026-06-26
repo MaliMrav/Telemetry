@@ -2,7 +2,7 @@
 
 #include "../display/DisplayManager.h"
 #include "../models/SensorRepository.h"
-#include "../config/settings.h"
+#include "../config/config.h"
 #include "ScreenConfig.h"
 
 #include <ArialRounded.h>

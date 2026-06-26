@@ -1,22 +1,16 @@
 #include "DisplayManager.h"
-
-#include "../config/settings.h"
+#include "../config/config.h"
 #include <ArialRounded.h>
-
-static uint16_t palette[] = {
-  ILI9341_BLACK,
-  ILI9341_WHITE,
-  ILI9341_YELLOW,
-  ILI9341_BLUE
-};
 
 DisplayManager::DisplayManager()
   : tft(Pins::TFT_CS, Pins::TFT_DC),
-    gfx_(&tft, 2, palette) {}
+    gfx_(&tft, DISPLAY_BITS_PER_PIXEL, display_palette) {}
 
 void DisplayManager::begin() {
-  pinMode(Pins::TFT_LED, OUTPUT);
-  digitalWrite(Pins::TFT_LED, LOW);
+  if (Pins::TFT_LED >= 0) {
+    pinMode(Pins::TFT_LED, OUTPUT);
+    digitalWrite(Pins::TFT_LED, LOW);
+  }
 
   gfx_.init();
   gfx_.fillBuffer(BLACK);

@@ -1,5 +1,14 @@
 #pragma once
 
+// TouchEvent is a raw, hardware-level touch reading.
+//
+// It carries calibrated screen coordinates from a single touch contact.
+// TouchController produces TouchEvents; TouchManager consumes them and
+// translates them into higher-level InputEvents based on the active profile.
+//
+// Future fields (gesture, duration, press/release) are noted here
+// as placeholders for when gesture recognition is added.
+
 #include <Arduino.h>
 
 

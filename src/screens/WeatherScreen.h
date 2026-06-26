@@ -1,5 +1,18 @@
 #pragma once
 
+// WeatherScreen is the main dashboard screen.
+//
+// It displays the current time and date, WiFi signal strength, and a
+// grid of sensor tiles sourced from SensorRepository. Tiles show the
+// current value, daily min/max, and trend direction for each sensor.
+//
+// Input handling:
+//   - TAP on the header toggles 12/24-hour clock
+//   - PREVIOUS_SCREEN / NEXT_SCREEN for future multi-page navigation
+//
+// WeatherScreen reads from SensorRepository only. It has no knowledge
+// of where the data came from (MQTT, HTTP, local sensor, etc.).
+
 #include <Arduino.h>
 #include "../models/SensorTile.h"
 #include "../display/DisplayManager.h"

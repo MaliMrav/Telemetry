@@ -1,5 +1,16 @@
 #pragma once
 
+// InputManager is the central hub for all user input.
+//
+// Responsibilities:
+//   - maintain a registry of input sources (touch, buttons, encoder)
+//   - poll all registered sources each loop via update()
+//   - hold a queue of pending InputEvents
+//   - dispatch queued events to the active screen via dispatchTo()
+//
+// Input sources call InputManager::trigger() to enqueue events.
+// Nothing outside InputManager needs to know which sources are registered.
+
 #include <Arduino.h>
 #include "InputEvent.h"
 

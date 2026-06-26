@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include "config/touch_config.h"
+#include "config/config.h"
 
 #include "display/DisplayManager.h"
 
