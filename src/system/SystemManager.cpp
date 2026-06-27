@@ -125,12 +125,17 @@ namespace
 
     void initialiseUI()
     {
-        if (HardwareConfig::HAS_TOUCH)
+        // Only handle calibration if touch hardware exists
+        if (HardwareConfig::HAS_TOUCH && HardwareConfig::HAS_RESISTIVE_TOUCH)
         {
+            // Check if calibration data exists
             const bool calibrationLoaded =
                 s_touchController &&
                 s_touchController->loadCalibration();
 
+            // Enter calibration mode if:
+            // - Forced via config, OR
+            // - No valid calibration exists
             s_calibrationMode =
                 CalibrationConfig::FORCE_CALIBRATION ||
                 !calibrationLoaded;
@@ -145,6 +150,7 @@ namespace
 
             if (s_calibrationMode && s_calibrationScreen && s_screenManager)
             {
+                Serial.println("[CALIBRATION] Entering calibration mode");
                 s_screenManager->show(s_calibrationScreen);
             }
             else if (s_weatherScreen && s_screenManager)
@@ -154,10 +160,12 @@ namespace
         }
         else
         {
+            // No touch hardware or capacitive touch (no calibration needed)
             s_calibrationMode = false;
 
             if (s_weatherScreen && s_screenManager)
             {
+                Serial.println("[SYSTEM] Touch disabled or not requiring calibration - showing WeatherScreen");
                 s_screenManager->show(s_weatherScreen);
             }
         }
@@ -294,7 +302,10 @@ namespace SystemManager
             s_lastRedraw = millis();
         }
 
+        // Handle calibration completion transition
+        // Only relevant if we're in calibration mode (resistive touch only)
         if (HardwareConfig::HAS_TOUCH &&
+            HardwareConfig::HAS_RESISTIVE_TOUCH &&
             s_calibrationMode &&
             s_calibrationScreen &&
             s_calibrationScreen->isFinished() &&
@@ -306,6 +317,7 @@ namespace SystemManager
             }
             else if (millis() - s_calibrationCompleteSince > 2000)
             {
+                Serial.println("[CALIBRATION] Complete - transitioning to WeatherScreen");
                 s_calibrationMode = false;
 
                 if (s_touchManager)
@@ -326,6 +338,7 @@ namespace SystemManager
             s_calibrationCompleteSince = 0;
         }
 
+        // Periodic screen refresh
         if (s_screenManager && millis() - s_lastRedraw >= 1000)
         {
             s_screenManager->update();

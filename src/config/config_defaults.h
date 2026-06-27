@@ -70,12 +70,12 @@
 // POSIX timezone string for your location.
 // Full list: https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
 // Examples:
-//   "Australia/Sydney"   → AEST-10AEDT,M10.1.0,M4.1.0/3
-//   "America/New_York"   → EST5EDT,M3.2.0,M11.1.0
-//   "Europe/London"      → GMT0BST,M3.5.0/1,M10.5.0
-//   "UTC"                → UTC0
+//   "AEST-10AEDT,M10.1.0,M4.1.0/3"   → Australia/Sydney
+//   "EST5EDT,M3.2.0,M11.1.0"          → America/New_York
+//   "GMT0BST,M3.5.0/1,M10.5.0"        → Europe/London
+//   "UTC0"                            → UTC
 #ifndef CFG_TIMEZONE
-  #define CFG_TIMEZONE "UTC"
+  #define CFG_TIMEZONE "UTC0"
 #endif
 
 // NTP server address. Use a regional pool for better reliability.
@@ -91,15 +91,27 @@
 #endif
 
 
+// =============================================================================
+// HARDWARE CONFIGURATION
+// =============================================================================
+//
+// This section uses a hierarchical structure. Enable a capability at the top
+// level, then configure its specific settings below.
+//
+// Only settings relevant to your enabled hardware will be used.
+//
+// =============================================================================
+
+
 // -----------------------------------------------------------------------------
-// Hardware — Display
+// Display — Type and Driver
 // -----------------------------------------------------------------------------
 
 // Display driver selection.
-// Uncomment exactly ONE of the following:
+// Choose ONE of the following:
 //   ILI9341  → 2.4" 240x320 TFT (SPI), common in ESP8266 kits
-//   SSD1306  → 128x64 OLED (I2C or SPI), monochrome
-//   ST7735   → 1.8" 128x160 TFT (SPI)
+//   SSD1306  → 128x64 OLED (I2C or SPI), monochrome (not yet implemented)
+//   ST7735   → 1.8" 128x160 TFT (SPI) (not yet implemented)
 //
 // Each driver has its own config file in config/display/ where you can
 // adjust driver-specific settings like SPI clock speed and color palette.
@@ -108,16 +120,21 @@
 #endif
 
 // Set to true if a display is physically connected.
-// Set to false for headless data-logger builds.
+// Set to false for headless data-logger builds (future use).
 #ifndef CFG_HAS_DISPLAY
   #define CFG_HAS_DISPLAY true
 #endif
 
+
+// -----------------------------------------------------------------------------
+// Display — Resolution
+// -----------------------------------------------------------------------------
 // Physical display resolution in pixels.
 // Must match your hardware. Common values:
 //   240x320  → ILI9341 2.4" TFT (portrait)
 //   128x64   → SSD1306 0.96" OLED
 //   128x160  → ST7735 1.8" TFT
+
 #ifndef CFG_SCREEN_WIDTH
   #define CFG_SCREEN_WIDTH 240
 #endif
@@ -125,9 +142,14 @@
   #define CFG_SCREEN_HEIGHT 320
 #endif
 
-// Display interface pins (SPI)
-// These are the ESP8266 GPIO connections to your display.
+
+// -----------------------------------------------------------------------------
+// Display — Pin Assignments (SPI)
+// -----------------------------------------------------------------------------
+// ESP8266 GPIO connections to your display.
 // D0-D8 are Arduino-style pin names. Check your board's pinout.
+//
+// MOSI, MISO, SCK are standard SPI pins and don't need to be defined here.
 
 // Data/Command pin: LOW = command, HIGH = data
 #ifndef CFG_TFT_DC
@@ -146,32 +168,61 @@
 #endif
 
 
+// =============================================================================
+// INPUT DEVICES
+// =============================================================================
+//
+// Configure which input methods your hardware supports.
+// Only configure settings for devices you've enabled.
+//
+// =============================================================================
+
+
 // -----------------------------------------------------------------------------
-// Hardware — Touch
+// Touch Input — Enable/Disable
 // -----------------------------------------------------------------------------
 
-// Set to true if a resistive or capacitive touch controller is connected.
+// Set to true ONLY if a touch controller is physically connected.
+// If false, all touch-related settings below are ignored.
 #ifndef CFG_HAS_TOUCH
   #define CFG_HAS_TOUCH true
 #endif
 
-// Touch controller type. Set the appropriate one to true.
+
+// -----------------------------------------------------------------------------
+// Touch Input — Type (only relevant if CFG_HAS_TOUCH = true)
+// -----------------------------------------------------------------------------
+// Set the appropriate type to true based on your hardware.
+
 #ifndef CFG_HAS_RESISTIVE_TOUCH
   #define CFG_HAS_RESISTIVE_TOUCH true
 #endif
+
 #ifndef CFG_HAS_CAPACITIVE_TOUCH
   #define CFG_HAS_CAPACITIVE_TOUCH false
 #endif
 
-// SPI pin: Chip select for the XPT2046 touch controller.
+
+// -----------------------------------------------------------------------------
+// Touch Input — Pin Assignments (only relevant if CFG_HAS_TOUCH = true)
+// -----------------------------------------------------------------------------
+// These pins are ONLY used if CFG_HAS_TOUCH is true.
+// For XPT2046 resistive touch controller (common with ILI9341).
+
+// SPI Chip Select for touch controller
 #ifndef CFG_TOUCH_CS
   #define CFG_TOUCH_CS D0
 #endif
 
-// GPIO pin: Touch interrupt from the XPT2046. Signals a touch is active.
+// Interrupt pin (signals when touch is active)
 #ifndef CFG_TOUCH_IRQ
   #define CFG_TOUCH_IRQ D1
 #endif
+
+
+// -----------------------------------------------------------------------------
+// Touch Input — Behavior (only relevant if CFG_HAS_TOUCH = true)
+// -----------------------------------------------------------------------------
 
 // Minimum time in milliseconds between touch events.
 // Prevents a single physical touch from generating multiple events.
@@ -181,23 +232,10 @@
 
 
 // -----------------------------------------------------------------------------
-// Hardware — Other Input Devices
+// Touch Calibration (only relevant if CFG_HAS_TOUCH = true)
 // -----------------------------------------------------------------------------
-
-// Set to true if physical buttons are connected.
-#ifndef CFG_HAS_BUTTONS
-  #define CFG_HAS_BUTTONS false
-#endif
-
-// Set to true if a rotary encoder is connected.
-#ifndef CFG_HAS_ENCODER
-  #define CFG_HAS_ENCODER false
-#endif
-
-
-// -----------------------------------------------------------------------------
-// Touch Calibration
-// -----------------------------------------------------------------------------
+// Calibration is ONLY needed for resistive touchscreens.
+// Capacitive touch typically doesn't require calibration.
 
 // Set to true to force the calibration workflow on every boot, regardless
 // of whether saved calibration data exists on LittleFS.
@@ -210,4 +248,19 @@
 // Filename used to persist touch calibration coefficients on LittleFS.
 #ifndef CFG_CALIBRATION_FILE
   #define CFG_CALIBRATION_FILE "/calibration.txt"
+#endif
+
+
+// -----------------------------------------------------------------------------
+// Other Input Devices (future)
+// -----------------------------------------------------------------------------
+
+// Set to true if physical buttons are connected.
+#ifndef CFG_HAS_BUTTONS
+  #define CFG_HAS_BUTTONS false
+#endif
+
+// Set to true if a rotary encoder is connected.
+#ifndef CFG_HAS_ENCODER
+  #define CFG_HAS_ENCODER false
 #endif
