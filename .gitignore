@@ -13,3 +13,6 @@
 # My Secrets
 platformio.local.ini
 secrets.h
+
+# Announcement Docs
+docs/announcements/*.md
