@@ -12,8 +12,6 @@ Programming languages evolve.
 
 Good engineering principles endure.
 
----
-
 # 1. Architecture Before Implementation
 
 Every significant change should begin with architecture.
@@ -21,8 +19,6 @@ Every significant change should begin with architecture.
 A well-designed architecture makes implementation feel inevitable.
 
 Code should be the consequence of good design, not the process used to discover it.
-
----
 
 # 2. Capabilities Before Hardware
 
@@ -38,8 +34,6 @@ Hardware merely provides a capability.
 
 Applications consume capabilities.
 
----
-
 # 3. Observations Before Information
 
 Firmware should observe.
@@ -51,8 +45,6 @@ Transformation into useful information should be deterministic.
 Inference belongs elsewhere.
 
 Telemetry deliberately stops before artificial intelligence.
-
----
 
 # 4. Information Before Intelligence
 
@@ -74,8 +66,6 @@ Those platforms exist to reason.
 
 Telemetry exists to observe.
 
----
-
 # 5. Separate Collection From Presentation
 
 Displays should render.
@@ -87,8 +77,6 @@ Networking should transport.
 Storage should persist.
 
 No component should perform another component's responsibility.
-
----
 
 # 6. Input Is Semantic
 
@@ -106,8 +94,6 @@ Input devices produce actions.
 
 Screens consume them.
 
----
-
 # 7. Every Abstraction Has a Cost
 
 Abstractions should reduce complexity.
@@ -116,8 +102,6 @@ Never increase it.
 
 If an abstraction makes the system harder to understand, it probably shouldn't exist.
 
----
-
 # 8. Composition Before Inheritance
 
 Objects should be assembled from smaller responsibilities.
@@ -125,8 +109,6 @@ Objects should be assembled from smaller responsibilities.
 Inheritance should be rare.
 
 Composition keeps systems understandable.
-
----
 
 # 9. Dependencies Flow Downward
 
@@ -139,8 +121,6 @@ Capabilities depend on drivers.
 Drivers depend on hardware.
 
 Never the other way around.
-
----
 
 # 10. Firmware Should Be Observable
 
@@ -162,8 +142,6 @@ Failures.
 
 Unknown behaviour is almost always harder to debug than incorrect behaviour.
 
----
-
 # 11. Good Architecture Should Feel Inevitable
 
 The best architecture rarely surprises people.
@@ -174,8 +152,6 @@ Instead, it produces the reaction:
 > why would it be designed any other way?"
 
 That is usually a sign the abstractions are correct.
-
----
 
 # 12. Teach Through Architecture
 
@@ -189,8 +165,6 @@ The repository should help developers understand not only *what* the code does..
 
 ...but *why* it is designed that way.
 
----
-
 # 13. Clarity Over Cleverness
 
 Readable firmware is maintainable firmware.
@@ -198,8 +172,6 @@ Readable firmware is maintainable firmware.
 Prefer obvious solutions over clever ones.
 
 Future readers include your future self.
-
----
 
 # 14. Framework Before Application
 
@@ -210,8 +182,6 @@ Weather is one application.
 Telemetry is the framework.
 
 The framework must always remain reusable.
-
----
 
 # 15. The Knowledge Pyramid
 
@@ -234,8 +204,6 @@ Telemetry is responsible for moving observations toward information.
 It deliberately stops there.
 
 Everything above belongs to higher-level systems.
-
----
 
 # 16. The Real Product
 
