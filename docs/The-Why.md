@@ -1,271 +1,269 @@
-# Vision
+**The Why**
 
-> "The real product is helping someone say:
->
-> **'Ahh... now I understand why.'**"
+_"The real product is helping someone say..._
 
-Telemetry is not a weather station.
+**_'Ahh... now I understand why.'_**"
 
-It is not an MQTT client.
+**This isn't really a repository about firmware.**
 
-It is not a dashboard.
+At first glance it probably looks like one.
 
-It is not another collection of Arduino examples.
+There's an ESP8266.
 
-Telemetry is an embedded observability framework.
+A TFT display.
 
-Its purpose is to help developers build firmware that observes the physical world, presents information clearly, and remains understandable as systems grow in complexity.
+MQTT.
 
-The framework exists because embedded software often becomes tightly coupled to specific hardware, difficult to extend, and difficult to reason about.
+Wi-Fi.
 
-Telemetry takes a different approach.
+OTA updates.
 
-It treats firmware as architecture.
+Sensors.
 
----
+Touch input.
 
-# What Telemetry Is
+The usual embedded things.
 
-Telemetry provides reusable building blocks for embedded systems.
+But those aren't actually why this repository exists.
 
-It separates hardware from behaviour.
+**It started with a weather station.**
 
-It separates data acquisition from presentation.
+Like so many hobby projects, I simply wanted to display some weather information on a small TFT screen.
 
-It separates user interaction from physical input devices.
+That worked.
 
-Its goal is to let developers think about capabilities instead of components.
+Then I wanted to add another sensor.
 
-Instead of asking:
+Then another.
 
-> "How do I read this sensor?"
+Then another screen.
 
-Telemetry encourages asking:
+Then OTA updates.
 
-> "What capability am I trying to provide?"
+Then calibration.
 
----
+Then MQTT.
 
-# The Philosophy
+Then different displays.
 
-Telemetry is built around a simple belief.
+Then different input devices.
 
-Good architecture makes complexity disappear.
+Before long I realised something.
 
-Every abstraction should make the system easier to understand.
+Every new feature wasn't creating a coding problem.
 
-If an abstraction creates more confusion than clarity, it should not exist.
+It was creating an architecture problem.
 
-Every module should have a single responsibility.
+**I kept asking myself the same question.**
 
-Every dependency should point in one direction.
+Not...
 
-Every layer should know only what it needs to know.
+"How do I make this work?"
 
----
+Instead...
 
-# What Telemetry Does
+**"Why does this feel messy?"**
 
-Telemetry focuses on six capabilities.
+Why does the display know about MQTT?
 
-## Input
+Why does the touch driver know about weather?
 
-Observing the physical world.
+Why does calibration interrupt boot?
 
-Examples include:
+Why does changing a display require changing application code?
 
-- touch
-- buttons
-- rotary encoders
-- sensors
-- serial interfaces
+Why can't this screen work with buttons instead of touch?
 
-Input becomes semantic actions rather than hardware events.
+Those questions slowly changed the project.
 
----
+**Somewhere along the way I realised something.**
 
-## Output
+I wasn't building a weather station anymore.
 
-Presenting information.
+I was trying to understand how good systems are built.
 
-Displays should render.
+Telemetry simply became the vehicle.
 
-They should not calculate.
+**Throughout my career I've worked in several different worlds.**
 
-Rendering is separate from decision making.
+Electronics.
 
----
+Networking.
 
-## Storage
+Infrastructure.
 
-Persisting state.
+Enterprise Architecture.
 
-Examples include:
+Solution Architecture.
 
-- calibration
-- configuration
-- preferences
-- cached observations
+User Experience.
 
-Storage exists so behaviour survives reboot.
+At first those disciplines seemed completely unrelated.
 
----
+Years later I realised they all shared the same principles.
 
-## Connectivity
+Observe.
 
-Communicating with other systems.
+Understand.
 
-Examples include:
+Simplify.
 
-- Wi-Fi
-- Ethernet
-- MQTT
-- BLE
-- USB
-- Serial
+Separate concerns.
 
-Connectivity transports information.
+Reduce coupling.
 
-It does not interpret it.
+Make change easy.
 
----
+Those ideas don't belong to firmware.
 
-## Data Sources
+They belong to engineering.
 
-Obtaining observations.
+**One lesson keeps appearing.**
 
-Examples include:
+Whenever I solve a problem, people often ask me:
 
-- MQTT
-- NTP
-- GPS
-- OneWire
-- Modbus
-- OBD-II
-- CAN
-- REST
-- local sensors
+"How did you know to do that?"
 
-Time itself is considered a data source.
+The honest answer is...
 
-Each source contributes observations to the system.
+I usually didn't.
 
----
+I simply followed the same process.
 
-## Diagnostics
+Observe.
 
-Making firmware observable.
+Form a hypothesis.
 
-Examples include:
+Run an experiment.
 
-- health
-- uptime
-- heap
-- watchdog
-- CPU load
-- connectivity
-- boot timing
+Collect evidence.
 
-A framework should always be able to explain what it is doing.
+Update my understanding.
 
----
+Repeat.
 
-# What Telemetry Does Not Do
+It works for debugging firmware.
 
-Telemetry intentionally stops before higher-order reasoning.
+It works for routing problems.
 
-It does not attempt to become:
+It works for distributed systems.
 
-- Home Assistant
-- Node-RED
-- an automation engine
-- an AI platform
-- an analytics platform
+It even works for life surprisingly often.
 
-Those systems already exist.
+**This repository isn't trying to impress anyone.**
 
-Telemetry provides reliable observations for them.
+Quite the opposite.
 
-They provide intelligence.
+You'll probably find code that could be shorter.
 
----
+Cleaner.
 
-# The Knowledge Pyramid
+More clever.
 
-Telemetry occupies the lower layers of the knowledge pyramid.
+I often leave the less clever solution if it's easier to understand.
 
-        Wisdom
-          ▲
-      Knowledge
-          ▲
-     Intelligence
-          ▲
-     Information
-          ▲
-         Data
-          ▲
-      Observation
+Because someone reading the code six months from now matters more than saving three lines today.
 
-Telemetry is responsible for moving observations toward information.
+That "someone" is usually me.
 
-Anything above that belongs elsewhere.
+Sometimes it might be you.
 
----
+**If you're just starting...**
 
-# Hardware Independence
+Welcome.
 
-The framework should never assume particular hardware.
+Seriously.
 
-Displays are replaceable.
+You don't need to know embedded systems.
 
-Input devices are replaceable.
+You don't need to know C++.
 
-Networking is replaceable.
+You don't need to know MQTT.
 
-Storage is replaceable.
+You certainly don't need to know architecture.
 
-Every hardware feature is selected through capabilities rather than assumptions.
+Nobody starts there.
 
-Adding new hardware should extend the framework rather than modify it.
+I certainly didn't.
 
----
+Take your time.
 
-# Teaching Through Architecture
+Ask questions.
 
-Telemetry is intentionally educational.
+Break things.
 
-Not because it is simple.
+Fix them.
 
-But because understanding architecture should not be hidden behind complexity.
+That's how engineers grow.
 
-The repository is designed so developers can explore:
+**If you've been doing this for years...**
 
-- modular design
-- dependency management
-- hardware abstraction
-- state management
-- observability
-- firmware architecture
+Welcome to you too.
 
-Every architectural decision should answer the question:
+You'll probably disagree with some of my decisions.
 
-> "Why?"
+I hope you do.
 
----
+Engineering advances because people challenge ideas respectfully.
 
-# Long-Term Goal
+If Telemetry starts a good architectural discussion, then it's already doing its job.
 
-Telemetry aims to become a reusable embedded architecture that scales from hobby projects to professional firmware.
+**What Telemetry tries to teach**
 
-The project values:
+Not electronics.
 
-- clarity over cleverness
-- architecture over shortcuts
-- observability over guesswork
-- maintainability over convenience
+Not ESP8266s.
 
-If someone finishes exploring this repository and says,
+Not displays.
 
-> "Ahh... now I understand why."
+Not MQTT.
 
-then Telemetry has achieved its purpose.
+Those are just examples.
+
+Telemetry tries to teach something much more transferable.
+
+How to think about systems.
+
+Because today's TFT display becomes tomorrow's CAN bus.
+
+Today's weather station becomes tomorrow's industrial controller.
+
+Today's hobby project becomes tomorrow's production system.
+
+Technology changes.
+
+Good thinking lasts.
+
+**So why publish all of this?**
+
+Because I owe an enormous debt to the engineers who took the time to explain things to me over the years.
+
+Not just what they were doing.
+
+Why.
+
+That single extra sentence often saved me days.
+
+Sometimes years.
+
+This repository is simply my way of paying that debt forward.
+
+**If there's one thing I'd like you to take away...**
+
+Don't copy the code.
+
+Question it.
+
+Challenge it.
+
+Improve it.
+
+Make it your own.
+
+If, somewhere along the journey, you find yourself smiling and thinking,
+
+**"Ahh... now I understand why."**
+
+then Telemetry has already succeeded.
+
+Everything else is just firmware.
