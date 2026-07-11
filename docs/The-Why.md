@@ -193,3 +193,79 @@ They provide intelligence.
 # The Knowledge Pyramid
 
 Telemetry occupies the lower layers of the knowledge pyramid.
+
+        Wisdom
+          ▲
+      Knowledge
+          ▲
+     Intelligence
+          ▲
+     Information
+          ▲
+         Data
+          ▲
+      Observation
+
+Telemetry is responsible for moving observations toward information.
+
+Anything above that belongs elsewhere.
+
+---
+
+# Hardware Independence
+
+The framework should never assume particular hardware.
+
+Displays are replaceable.
+
+Input devices are replaceable.
+
+Networking is replaceable.
+
+Storage is replaceable.
+
+Every hardware feature is selected through capabilities rather than assumptions.
+
+Adding new hardware should extend the framework rather than modify it.
+
+---
+
+# Teaching Through Architecture
+
+Telemetry is intentionally educational.
+
+Not because it is simple.
+
+But because understanding architecture should not be hidden behind complexity.
+
+The repository is designed so developers can explore:
+
+- modular design
+- dependency management
+- hardware abstraction
+- state management
+- observability
+- firmware architecture
+
+Every architectural decision should answer the question:
+
+> "Why?"
+
+---
+
+# Long-Term Goal
+
+Telemetry aims to become a reusable embedded architecture that scales from hobby projects to professional firmware.
+
+The project values:
+
+- clarity over cleverness
+- architecture over shortcuts
+- observability over guesswork
+- maintainability over convenience
+
+If someone finishes exploring this repository and says,
+
+> "Ahh... now I understand why."
+
+then Telemetry has achieved its purpose.
