@@ -1,269 +1,183 @@
-**The Why**
+# The Why
 
-_"The real product is helping someone say..._
+> *"The real product is helping someone say:
+>
+> **'Ahh... now I understand why.'**"*
 
-**_'Ahh... now I understand why.'_**"
+---
 
-**This isn't really a repository about firmware.**
+## Why this repository exists
 
-At first glance it probably looks like one.
+If you've ended up here because you're looking for an ESP8266 weather station...
 
-There's an ESP8266.
+...you've probably taken a wrong turn.
 
-A TFT display.
+There are already hundreds of fantastic projects that will get pixels onto a screen, publish values over MQTT, or connect a sensor to Home Assistant.
 
-MQTT.
+Telemetry isn't trying to compete with any of them.
 
-Wi-Fi.
+Instead, it's trying to answer a different question.
 
-OTA updates.
+**Why are they built that way?**
 
-Sensors.
+---
 
-Touch input.
+## It didn't start like this
 
-The usual embedded things.
+Like most hobby projects, Telemetry started with a simple goal.
 
-But those aren't actually why this repository exists.
+Show some weather data on a display.
 
-**It started with a weather station.**
+That sounded easy enough.
 
-Like so many hobby projects, I simply wanted to display some weather information on a small TFT screen.
+Then one small change led to another.
 
-That worked.
+Could I separate the display from the data?
 
-Then I wanted to add another sensor.
+Could touch input become reusable?
 
-Then another.
+Should calibration interrupt boot?
 
-Then another screen.
+What happens if the hardware changes?
 
-Then OTA updates.
+Could the same application run on a completely different display?
 
-Then calibration.
+Before long, I realised I wasn't building a weather station anymore.
 
-Then MQTT.
+I was learning architecture.
 
-Then different displays.
+This repository simply became my notebook.
 
-Then different input devices.
+---
 
-Before long I realised something.
+## What I learned the hard way
 
-Every new feature wasn't creating a coding problem.
+Over the years I've worked in electronics, networking, enterprise architecture and user experience.
 
-It was creating an architecture problem.
+Different industries.
 
-**I kept asking myself the same question.**
+Different technologies.
 
-Not...
+Different scales.
 
-"How do I make this work?"
+Yet I kept discovering the same lessons over and over again.
 
-Instead...
+Good systems usually aren't clever.
 
-**"Why does this feel messy?"**
+They're understandable.
 
-Why does the display know about MQTT?
+Good abstractions make complexity disappear.
 
-Why does the touch driver know about weather?
+Poor abstractions make simple things complicated.
 
-Why does calibration interrupt boot?
+Names matter.
 
-Why does changing a display require changing application code?
+Comments should explain intent.
 
-Why can't this screen work with buttons instead of touch?
+Debugging isn't guessing.
 
-Those questions slowly changed the project.
+It's science.
 
-**Somewhere along the way I realised something.**
+Those lessons weren't unique to embedded systems.
 
-I wasn't building a weather station anymore.
+They applied everywhere.
 
-I was trying to understand how good systems are built.
+Eventually I realised they belonged together in one place.
 
-Telemetry simply became the vehicle.
+That's what this repository became.
 
-**Throughout my career I've worked in several different worlds.**
+---
 
-Electronics.
+## Telemetry isn't the product
 
-Networking.
+This is probably the most important thing I can say.
 
-Infrastructure.
+Telemetry isn't really about firmware.
 
-Enterprise Architecture.
+The firmware is just the vehicle.
 
-Solution Architecture.
+The real product is understanding.
 
-User Experience.
+If something in this repository helps you stop for a moment and think,
 
-At first those disciplines seemed completely unrelated.
+> "Ahh... now I understand why they did it that way."
 
-Years later I realised they all shared the same principles.
+then it's done exactly what I hoped it would.
 
-Observe.
+---
 
-Understand.
+## You don't need to know everything
 
-Simplify.
+One of the biggest myths in engineering is that everyone else already knows what they're doing.
 
-Separate concerns.
+They don't.
 
-Reduce coupling.
+We're all figuring things out.
 
-Make change easy.
+Some people simply have more years of mistakes behind them.
 
-Those ideas don't belong to firmware.
+If you're just getting started with embedded systems...
 
-They belong to engineering.
+...welcome.
 
-**One lesson keeps appearing.**
+If you're an experienced firmware engineer...
 
-Whenever I solve a problem, people often ask me:
+...welcome.
 
-"How did you know to do that?"
+If you're a software developer who's never touched a microcontroller before...
 
-The honest answer is...
+...welcome.
 
-I usually didn't.
+If you're an architect wondering how the same design principles scale all the way down to a few hundred kilobytes of RAM...
 
-I simply followed the same process.
+...you're especially welcome.
 
-Observe.
+This repository is for curious people.
 
-Form a hypothesis.
+---
 
-Run an experiment.
+## This isn't about copying code
 
-Collect evidence.
-
-Update my understanding.
-
-Repeat.
-
-It works for debugging firmware.
-
-It works for routing problems.
-
-It works for distributed systems.
-
-It even works for life surprisingly often.
-
-**This repository isn't trying to impress anyone.**
-
-Quite the opposite.
-
-You'll probably find code that could be shorter.
-
-Cleaner.
-
-More clever.
-
-I often leave the less clever solution if it's easier to understand.
-
-Because someone reading the code six months from now matters more than saving three lines today.
-
-That "someone" is usually me.
-
-Sometimes it might be you.
-
-**If you're just starting...**
-
-Welcome.
+I genuinely hope you don't copy much of the code.
 
 Seriously.
 
-You don't need to know embedded systems.
+I hope you understand it well enough to write your own.
 
-You don't need to know C++.
+Because that's how engineering grows.
 
-You don't need to know MQTT.
+Not by memorising solutions.
 
-You certainly don't need to know architecture.
+By understanding why those solutions exist.
 
-Nobody starts there.
+---
 
-I certainly didn't.
-
-Take your time.
-
-Ask questions.
-
-Break things.
-
-Fix them.
-
-That's how engineers grow.
-
-**If you've been doing this for years...**
-
-Welcome to you too.
-
-You'll probably disagree with some of my decisions.
-
-I hope you do.
-
-Engineering advances because people challenge ideas respectfully.
-
-If Telemetry starts a good architectural discussion, then it's already doing its job.
-
-**What Telemetry tries to teach**
-
-Not electronics.
-
-Not ESP8266s.
-
-Not displays.
-
-Not MQTT.
-
-Those are just examples.
-
-Telemetry tries to teach something much more transferable.
-
-How to think about systems.
-
-Because today's TFT display becomes tomorrow's CAN bus.
-
-Today's weather station becomes tomorrow's industrial controller.
-
-Today's hobby project becomes tomorrow's production system.
+## If you only take one thing away...
 
 Technology changes.
 
-Good thinking lasts.
+Displays change.
 
-**So why publish all of this?**
+Microcontrollers change.
 
-Because I owe an enormous debt to the engineers who took the time to explain things to me over the years.
+Protocols change.
 
-Not just what they were doing.
+Languages change.
 
-Why.
+Good engineering thinking doesn't.
 
-That single extra sentence often saved me days.
+If Telemetry leaves you with one thing, I hope it's this:
 
-Sometimes years.
+Always ask **why** before asking **how**.
 
-This repository is simply my way of paying that debt forward.
+The "how" changes every few years.
 
-**If there's one thing I'd like you to take away...**
+The "why" lasts a career.
 
-Don't copy the code.
+---
 
-Question it.
+If something in these pages makes you smile and quietly say,
 
-Challenge it.
+> **"Ahh... now I understand why."**
 
-Improve it.
-
-Make it your own.
-
-If, somewhere along the journey, you find yourself smiling and thinking,
-
-**"Ahh... now I understand why."**
-
-then Telemetry has already succeeded.
-
-Everything else is just firmware.
+then this repository has achieved exactly what it was built to do.
