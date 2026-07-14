@@ -1,6 +1,6 @@
-# Guiding Principles
+# How We Think
 
-These principles guide every architectural decision within Telemetry.
+These principles guide every architectural decision made within Telemetry.
 
 They are intentionally technology-agnostic.
 
@@ -20,7 +20,24 @@ A well-designed architecture makes implementation feel inevitable.
 
 Code should be the consequence of good design, not the process used to discover it.
 
-# 2. Capabilities Before Hardware
+# 2. The Repository Should Reflect the Architecture
+
+A well-structured repository should communicate the architecture before a single source file is opened.
+
+Developers should be able to browse the directory tree and immediately understand:
+
+- what the major applications are
+- how responsibilities are separated
+- where capabilities belong
+- how the framework is organised
+
+Documentation should explain the architecture, not compensate for it.
+
+Good architecture should be visible.
+
+Before a single line of code is read.
+
+# 3. Capabilities Before Hardware
 
 The framework thinks in capabilities.
 
@@ -30,11 +47,13 @@ Not touch controllers.
 
 Not Wi-Fi chips.
 
-Hardware merely provides a capability.
+Hardware provides capabilities.
 
-Applications consume capabilities.
+The framework exposes them.
 
-# 3. Observations Before Information
+Applications consume them.
+
+# 4. Observations Before Information
 
 Firmware should observe.
 
@@ -46,7 +65,7 @@ Inference belongs elsewhere.
 
 Telemetry deliberately stops before artificial intelligence.
 
-# 4. Information Before Intelligence
+# 5. Information Before Intelligence
 
 Telemetry transforms observations into information.
 
@@ -66,19 +85,21 @@ Those platforms exist to reason.
 
 Telemetry exists to observe.
 
-# 5. Separate Collection From Presentation
+# 6. One Responsibility Per Capability
 
-Displays should render.
+Displays render.
 
-Sensors should measure.
+Sensors observe.
 
-Networking should transport.
+Storage persists.
 
-Storage should persist.
+Connectivity transports.
 
-No component should perform another component's responsibility.
+Diagnostics observe.
 
-# 6. Input Is Semantic
+Each capability should have one responsibility, and perform it well.
+
+# 7. Input Is Semantic
 
 Screens never care whether an action originated from:
 
@@ -94,7 +115,7 @@ Input devices produce actions.
 
 Screens consume them.
 
-# 7. Every Abstraction Has a Cost
+# 8. Every Abstraction Has a Cost
 
 Abstractions should reduce complexity.
 
@@ -102,7 +123,7 @@ Never increase it.
 
 If an abstraction makes the system harder to understand, it probably shouldn't exist.
 
-# 8. Composition Before Inheritance
+# 9. Composition Before Inheritance
 
 Objects should be assembled from smaller responsibilities.
 
@@ -110,7 +131,7 @@ Inheritance should be rare.
 
 Composition keeps systems understandable.
 
-# 9. Dependencies Flow Downward
+# 10. Dependencies Flow Downward
 
 High-level policy should never depend upon hardware.
 
@@ -122,9 +143,15 @@ Drivers depend on hardware.
 
 Never the other way around.
 
-# 10. Firmware Should Be Observable
+Dependencies should become simpler as they move downward.
+
+# 11. Firmware Should Be Observable
 
 Firmware should always be able to explain itself.
+
+If the firmware cannot explain what it is doing,
+
+neither can the engineer.
 
 Health.
 
@@ -142,9 +169,9 @@ Failures.
 
 Unknown behaviour is almost always harder to debug than incorrect behaviour.
 
-# 11. Good Architecture Should Feel Inevitable
+# 12. Good Architecture Should Feel Inevitable
 
-The best architecture rarely surprises people.
+The best architecture rarely feels surprising.
 
 Instead, it produces the reaction:
 
@@ -153,7 +180,21 @@ Instead, it produces the reaction:
 
 That is usually a sign the abstractions are correct.
 
-# 12. Teach Through Architecture
+# 13. Architecture is User Experience
+
+Not just for users.
+
+For contributors.
+
+For future maintainers.
+
+For the engineer reading the code five years from now.
+
+Good architecture reduces cognitive load.
+
+A system should feel discoverable long before it feels familiar.
+
+# 14. Teach Through Architecture
 
 Telemetry exists to teach.
 
@@ -165,7 +206,11 @@ The repository should help developers understand not only *what* the code does..
 
 ...but *why* it is designed that way.
 
-# 13. Clarity Over Cleverness
+# 15. Clarity Over Cleverness
+
+Clever code impresses today's developer.
+
+Clear code teaches tomorrow's developer.
 
 Readable firmware is maintainable firmware.
 
@@ -173,17 +218,17 @@ Prefer obvious solutions over clever ones.
 
 Future readers include your future self.
 
-# 14. Framework Before Application
+# 16. Framework Before Application
 
 The framework should never become tightly coupled to a single application.
 
-Weather is one application.
+Weather is one implementation of the framework.
 
 Telemetry is the framework.
 
 The framework must always remain reusable.
 
-# 15. The Knowledge Pyramid
+# 17. The Knowledge Pyramid
 
 Telemetry occupies only part of the engineering knowledge pyramid.
 
@@ -205,7 +250,7 @@ It deliberately stops there.
 
 Everything above belongs to higher-level systems.
 
-# 16. The Real Product
+# 18. The Real Product
 
 Telemetry is not the product.
 
@@ -216,3 +261,19 @@ The framework is not the product.
 The real product is helping someone say:
 
 > "Ahh... now I understand why."
+
+---
+
+# A Final Thought
+
+These principles are not rules.
+
+They are reminders.
+
+They exist to help us make consistent decisions as Telemetry evolves.
+
+If a future design forces us to challenge one of these principles, the discussion itself is valuable.
+
+Good engineering is not about following rules.
+
+It is about understanding why they exist.
