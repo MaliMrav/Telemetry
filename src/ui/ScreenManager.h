@@ -3,7 +3,7 @@
 // ScreenManager owns the currently active screen and routes events to it.
 //
 // Responsibilities:
-//   - activate a screen via show(), calling leave() on the outgoing
+//   - activate a screen via activate(), calling leave() on the outgoing
 //     screen and enter() on the incoming one
 //   - set the appropriate TouchManager profile when the screen changes
 //   - forward update() and onInput() calls to the active screen
@@ -22,7 +22,7 @@ class ScreenManager
 public:
     void bindTouchManager(TouchManager* touchManager);
 
-    void show(Screen* screen);
+    void activate(Screen* screen);
 
     void update();
 

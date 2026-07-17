@@ -151,11 +151,11 @@ namespace
             if (s_calibrationMode && s_calibrationScreen && s_screenManager)
             {
                 Serial.println("[CALIBRATION] Entering calibration mode");
-                s_screenManager->show(s_calibrationScreen);
+                s_screenManager->activate(s_calibrationScreen);
             }
             else if (s_weatherScreen && s_screenManager)
             {
-                s_screenManager->show(s_weatherScreen);
+                s_screenManager->activate(s_weatherScreen);
             }
         }
         else
@@ -166,7 +166,7 @@ namespace
             if (s_weatherScreen && s_screenManager)
             {
                 Serial.println("[SYSTEM] Touch disabled or not requiring calibration - showing WeatherScreen");
-                s_screenManager->show(s_weatherScreen);
+                s_screenManager->activate(s_weatherScreen);
             }
         }
 
@@ -235,7 +235,7 @@ namespace SystemManager
 
         if (s_screenManager && s_bootScreen)
         {
-            s_screenManager->show(s_bootScreen);
+            s_screenManager->activate(s_bootScreen);
         }
 
         bootStatus(
@@ -327,7 +327,7 @@ namespace SystemManager
 
                 if (s_screenManager && s_weatherScreen)
                 {
-                    s_screenManager->show(s_weatherScreen);
+                    s_screenManager->activate(s_weatherScreen);
                     s_screenManager->update();
                     s_lastRedraw = millis();
                 }

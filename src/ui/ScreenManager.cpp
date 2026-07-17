@@ -7,7 +7,7 @@ void ScreenManager::bindTouchManager(TouchManager* touchManager)
     touchManager_ = touchManager;
 }
 
-void ScreenManager::show(Screen* screen)
+void ScreenManager::activate(Screen* screen)
 {
     if (currentScreen_)
     {
@@ -24,8 +24,8 @@ void ScreenManager::show(Screen* screen)
                 touchManager_->setProfile(TouchManager::Profile::Weather);
                 break;
 
-            case ScreenKind::Status:
-                touchManager_->setProfile(TouchManager::Profile::Status);
+            case ScreenKind::ControlPanel:
+                touchManager_->setProfile(TouchManager::Profile::Generic);
                 break;
 
             case ScreenKind::Calibration:
