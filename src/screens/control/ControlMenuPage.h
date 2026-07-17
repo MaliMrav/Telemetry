@@ -15,7 +15,7 @@ public:
 
     void onInput(const InputEvent& event) override;
 
-    [[nodiscard]]
+    // [[nodiscard]]
     Destination destination() const
     {
         return destination_;

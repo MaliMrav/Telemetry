@@ -22,7 +22,9 @@ enum class ScreenKind
     Boot,
     Weather,
     Status,
-    Calibration
+    Calibration,
+    ControlPanel,
+    ConnectivityPage
 };
 
 class Screen

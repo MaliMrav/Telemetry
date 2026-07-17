@@ -38,7 +38,7 @@ void ControlMenuPage::render(DisplayManager& display)
 
     display.drawString(display.getWidth() / 2, 4, title());
 
-    display.drawHorizontalLine(0, 18, display.getWidth());
+    // display.drawHorizontalLine(0, 18, display.getWidth());
 
     display.setTextAlignment(DisplayManager::LEFT);
 

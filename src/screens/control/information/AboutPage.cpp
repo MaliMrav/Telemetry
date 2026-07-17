@@ -1,24 +1,20 @@
 #include "AboutPage.h"
 
-#include "../../display/DisplayManager.h"
-#include "../../system/BuildInfo.h"
+#include "../../../display/DisplayManager.h"
+#include "../../../system/BuildInfo.h"
 
 const char* AboutPage::title() const
 {
     return "About";
 }
 
-void AboutPage::renderContent(DisplayManager& display)
+void AboutPage::render(DisplayManager& display)
 {
-    namespace
-    {
-        constexpr int LEFT        = 10;
-        constexpr int VALUE       = 95;
-        constexpr int LINE_HEIGHT = 18;
-    }
-    
+    constexpr int LEFT        = 10;
+    constexpr int VALUE       = 95;
+    constexpr int LINE_HEIGHT = 18;
 
-     display.setTextAlignment(DisplayManager::LEFT);
+    display.setTextAlignment(DisplayManager::LEFT);
 
     int y = 30;
 

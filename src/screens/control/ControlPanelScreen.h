@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Screen.h"
+#include "../../ui/Screen.h"
 
 #include "ControlMenuPage.h"
 #include "information/AboutPage.h"
