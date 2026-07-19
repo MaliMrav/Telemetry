@@ -12,53 +12,44 @@ void ControlMenuPage::onInput(const InputEvent& event)
     switch (event.action)
     {
         case InputAction::SCROLL_UP:
-
-            destination_ = Destination::About;
+            selectedPage_ = ControlPageKind::About;
             break;
 
         case InputAction::SCROLL_DOWN:
-
-            destination_ = Destination::Connectivity;
+            selectedPage_ = ControlPageKind::Connectivity;
             break;
 
         default:
             break;
     }
 }
-
 void ControlMenuPage::render(DisplayManager& display)
 {
-    constexpr int LEFT = 10;
-    constexpr int LINE_HEIGHT = 18;
+    constexpr int TITLE_Y          = 4;
+    constexpr int DIVIDER_Y        = 18;
+    constexpr int CONTENT_LEFT     = 10;
+    constexpr int FIRST_ITEM_Y     = 30;
+    constexpr int ITEM_LINE_HEIGHT = 18;
+    constexpr int SCREEN_LEFT      = 0;
 
     display.clear(DisplayManager::BLACK);
 
     display.setColor(DisplayManager::WHITE);
     display.setTextAlignment(DisplayManager::CENTER);
 
-    display.drawString(display.getWidth() / 2, 4, title());
+    display.drawString(display.getWidth() / 2, TITLE_Y, title()); // title
 
-    // display.drawHorizontalLine(0, 18, display.getWidth());
+    display.drawLine(SCREEN_LEFT, DIVIDER_Y, display.getWidth() - 1, DIVIDER_Y); // horizontal line
 
     display.setTextAlignment(DisplayManager::LEFT);
 
-    int y = 30;
+    int y = FIRST_ITEM_Y;
 
-    display.drawString(
-        LEFT,
-        y,
-        destination_ == Destination::About
-            ? "> About"
-            : "  About");
+    display.drawString(CONTENT_LEFT, y, selectedPage_ == ControlPageKind::About ? "> About" : "  About"); // first item
 
-    y += LINE_HEIGHT;
+    y += ITEM_LINE_HEIGHT;
 
-    display.drawString(
-        LEFT,
-        y,
-        destination_ == Destination::Connectivity
-            ? "> Connectivity"
-            : "  Connectivity");
+    display.drawString(CONTENT_LEFT, y, selectedPage_ == ControlPageKind::Connectivity ? "> Connectivity" : "  Connectivity"); // second item
 
     display.commit();
 }

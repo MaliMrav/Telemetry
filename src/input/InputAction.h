@@ -16,12 +16,15 @@ enum class InputAction
     TAP,
     LONG_PRESS,
 
-    PREVIOUS_SCREEN,
-    NEXT_SCREEN,
-
     SELECT,
+    CANCEL,
     BACK,
 
     SCROLL_UP,
-    SCROLL_DOWN
+    SCROLL_DOWN,
+    SCROLL_LEFT,
+    SCROLL_RIGHT,
+
+    INCREASE,
+    DECREASE
 };

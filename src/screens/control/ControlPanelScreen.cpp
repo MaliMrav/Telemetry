@@ -38,11 +38,11 @@ void ControlPanelScreen::onInput(const InputEvent& event)
         {
             switch (menuPage_.destination())
             {
-                case Destination::About:
+                case ControlPageKind::About:
                     activate(aboutPage_);
                     break;
 
-                case Destination::Connectivity:
+                case ControlPageKind::Connectivity:
                     activate(connectivityPage_);
                     break;
             }
