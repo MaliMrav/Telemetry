@@ -17,38 +17,38 @@ That is the central architectural goal of Telemetry.
 ## The Architecture at a Glance
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│                         Application                          │
-│                                                              │
-│  Weather presentation                                        │
-│  Control Panel                                                │
-│  Information pages                                            │
-└──────────────────────────────┬───────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                         Application                  │
+│                                                      │
+│  Weather presentation                                │
+│  Control Panel                                       │
+│  Information pages                                   │
+└──────────────────────────────┬───────────────────────┘
                                │
                                ▼
-┌──────────────────────────────────────────────────────────────┐
-│                         UI Framework                          │
-│                                                              │
-│  ScreenManager                                                │
-│  Screen                                                        │
-│  ControlPanelScreen                                            │
-│  ControlPage                                                   │
-│  InputEvent interpretation                                      │
-└──────────────────────────────┬───────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                         UI Framework                 │
+│                                                      │
+│  ScreenManager                                       │
+│  Screen                                              │
+│  ControlPanelScreen                                  │
+│  ControlPage                                         │
+│  InputEvent interpretation                           │
+└──────────────────────────────┬───────────────────────┘
                                │
                                ▼
-┌──────────────────────────────────────────────────────────────┐
-│                         Capabilities                          │
-│                                                              │
-│  Display · Input · Touch · Connectivity · Data · OTA         │
-└──────────────────────────────┬───────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                         Capabilities                 │
+│                                                      │
+│  Display · Input · Touch · Connectivity · Data · OTA │
+└──────────────────────────────┬───────────────────────┘
                                │
                                ▼
-┌──────────────────────────────────────────────────────────────┐
-│                           Hardware                            │
-│                                                              │
-│  ESP8266 / ESP32 · Displays · Touch · Input devices          │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                           Hardware                   │
+│                                                      │
+│  ESP8266 / ESP32 · Displays · Touch · Input devices  │
+└──────────────────────────────────────────────────────┘
 ```
 
 The important characteristic is not the number of layers. It is the direction of dependency.
@@ -139,26 +139,26 @@ The application should consume data. It should not need to know where that data 
 A value might arrive from MQTT, a local sensor, a file, a test source, or another transport mechanism.
 
 ```text
-┌─────────────────────┐
-│    Data Source      │
-│                     │
-│ MQTT / Sensor /     │
-│ Test / Other        │
-└──────────┬──────────┘
+┌────────────────────┐
+│    Data Source     │
+│                    │
+│ MQTT / Sensor /    │
+│ Test / Other       │
+└──────────┬─────────┘
            │
            ▼
-┌─────────────────────┐
-│    IDataSource      │
-│                     │
-│  Stable contract    │
-└──────────┬──────────┘
+┌────────────────────┐
+│    IDataSource     │
+│                    │
+│  Stable contract   │
+└──────────┬─────────┘
            │
            ▼
-┌─────────────────────┐
-│    Application      │
-│                     │
-│  Consumes data      │
-└─────────────────────┘
+┌────────────────────┐
+│    Application     │
+│                    │
+│  Consumes data     │
+└────────────────────┘
 ```
 
 > **Applications consume capabilities, not implementations.**
@@ -178,7 +178,7 @@ Touch, joystick, rotary encoder, keyboard, and five-way switch all produce diffe
 │   Physical Input    │
 │                     │
 │ Touch / Encoder /   │
-│ Joystick / Switch  │
+│ Joystick / Switch   │
 └──────────┬──────────┘
            │
            ▼
