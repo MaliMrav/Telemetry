@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ControlPage.h"
-#include "ControlPageKind.h"
+#include "Destination.h"
 
 class DisplayManager;
 
@@ -16,11 +16,11 @@ public:
     void onInput(const InputEvent& event) override;
 
     // [[nodiscard]]
-    ControlPageKind destination() const
+    Destination destination() const
     {
-        return selectedPage_;
+        return destination_;
     }
 
 private:
-    ControlPageKind selectedPage_ = ControlPageKind::About;
+    Destination destination_ = Destination::About;
 };

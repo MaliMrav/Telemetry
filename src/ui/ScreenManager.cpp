@@ -52,20 +52,8 @@ void ScreenManager::update()
     }
 }
 
-void ScreenManager::onInput(
-    const InputEvent& event)
+void ScreenManager::onInput(const InputEvent& event)
 {
-    //
-    // ScreenManager owns screen-level navigation.
-    //
-    // If the event represents a request to leave the current
-    // screen or transition to another screen, that decision
-    // belongs here.
-    //
-    // Events that do not represent screen-level navigation
-    // belong to the active screen.
-    //
-
     if (currentScreen_)
     {
         currentScreen_->onInput(event);

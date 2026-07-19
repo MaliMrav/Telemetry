@@ -1,6 +1,6 @@
 #pragma once
 
-enum class ControlPageKind
+enum class Destination
 {
     About,
     Connectivity,

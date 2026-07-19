@@ -1,23 +1,18 @@
 #pragma once
 
-// Screens do not activate other screens directly.
+// Screen is the base class for every screen in the framework.
 //
-// ScreenManager owns screen-level navigation and transitions.
+// A screen owns its own rendering and input handling. The framework
+// calls enter() when a screen becomes active, leave() when it is
+// replaced, update() on a regular interval to redraw, and onInput()
+// when the InputManager dispatches an event.
 //
-// A Screen may interpret an InputEvent locally, or express
-// a request for screen-level navigation through the navigation
-// contract established by ScreenManager.
+// Screens do not call each other directly. Navigation is expressed
+// by returning intent to ScreenManager (future) or by having
+// SystemManager observe screen state (current approach).
 //
-// Screen is the boundary between application-wide navigation
-// and interaction within an individual screen.
-//
-// A Screen may delegate interaction to its active Page, but it
-// should not delegate screen-level navigation to its active Page.
-//
-// TODO: Sprint Delta - Phase 4 — Define contextual interpretation
-// Design the contract between Screen and Page, and implement Page as a base class for the various pages that make up a screen.
-// i.e. Write a concrete “return intent” API into Screen
-
+// To add a new screen: subclass Screen, override the relevant methods,
+// add a ScreenKind value, and register it with ScreenManager.
 
 #include "../input/InputEvent.h"
 
@@ -26,8 +21,10 @@ enum class ScreenKind
     Generic,
     Boot,
     Weather,
+    Status,
     Calibration,
-    ControlPanel
+    ControlPanel,
+    ConnectivityPage
 };
 
 class Screen

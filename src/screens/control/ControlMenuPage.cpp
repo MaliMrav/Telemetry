@@ -12,44 +12,53 @@ void ControlMenuPage::onInput(const InputEvent& event)
     switch (event.action)
     {
         case InputAction::SCROLL_UP:
-            selectedPage_ = ControlPageKind::About;
+
+            destination_ = Destination::About;
             break;
 
         case InputAction::SCROLL_DOWN:
-            selectedPage_ = ControlPageKind::Connectivity;
+
+            destination_ = Destination::Connectivity;
             break;
 
         default:
             break;
     }
 }
+
 void ControlMenuPage::render(DisplayManager& display)
 {
-    constexpr int TITLE_Y          = 4;
-    constexpr int DIVIDER_Y        = 18;
-    constexpr int CONTENT_LEFT     = 10;
-    constexpr int FIRST_ITEM_Y     = 30;
-    constexpr int ITEM_LINE_HEIGHT = 18;
-    constexpr int SCREEN_LEFT      = 0;
+    constexpr int LEFT = 10;
+    constexpr int LINE_HEIGHT = 18;
 
     display.clear(DisplayManager::BLACK);
 
     display.setColor(DisplayManager::WHITE);
     display.setTextAlignment(DisplayManager::CENTER);
 
-    display.drawString(display.getWidth() / 2, TITLE_Y, title()); // title
+    display.drawString(display.getWidth() / 2, 4, title());
 
-    display.drawLine(SCREEN_LEFT, DIVIDER_Y, display.getWidth() - 1, DIVIDER_Y); // horizontal line
+    // display.drawHorizontalLine(0, 18, display.getWidth());
 
     display.setTextAlignment(DisplayManager::LEFT);
 
-    int y = FIRST_ITEM_Y;
+    int y = 30;
 
-    display.drawString(CONTENT_LEFT, y, selectedPage_ == ControlPageKind::About ? "> About" : "  About"); // first item
+    display.drawString(
+        LEFT,
+        y,
+        destination_ == Destination::About
+            ? "> About"
+            : "  About");
 
-    y += ITEM_LINE_HEIGHT;
+    y += LINE_HEIGHT;
 
-    display.drawString(CONTENT_LEFT, y, selectedPage_ == ControlPageKind::Connectivity ? "> Connectivity" : "  Connectivity"); // second item
+    display.drawString(
+        LEFT,
+        y,
+        destination_ == Destination::Connectivity
+            ? "> Connectivity"
+            : "  Connectivity");
 
     display.commit();
 }
