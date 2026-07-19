@@ -18,34 +18,34 @@ That is the central architectural goal of Telemetry.
 
 ```text
 ┌──────────────────────────────────────────────────────┐
-│                         Application                  │
+│                    Application                       │
 │                                                      │
 │  Weather presentation                                │
 │  Control Panel                                       │
 │  Information pages                                   │
-└──────────────────────────────┬───────────────────────┘
-                               │
-                               ▼
+└─────────────────────────┬────────────────────────────┘
+                          │
+                          ▼
 ┌──────────────────────────────────────────────────────┐
-│                         UI Framework                 │
+│                    UI Framework                      │
 │                                                      │
 │  ScreenManager                                       │
 │  Screen                                              │
 │  ControlPanelScreen                                  │
 │  ControlPage                                         │
 │  InputEvent interpretation                           │
-└──────────────────────────────┬───────────────────────┘
-                               │
-                               ▼
+└─────────────────────────┬────────────────────────────┘
+                          │
+                          ▼
 ┌──────────────────────────────────────────────────────┐
-│                         Capabilities                 │
+│                    Capabilities                      │
 │                                                      │
 │  Display · Input · Touch · Connectivity · Data · OTA │
-└──────────────────────────────┬───────────────────────┘
-                               │
-                               ▼
+└─────────────────────────┬────────────────────────────┘
+                          │
+                          ▼
 ┌──────────────────────────────────────────────────────┐
-│                           Hardware                   │
+│                      Hardware                        │
 │                                                      │
 │  ESP8266 / ESP32 · Displays · Touch · Input devices  │
 └──────────────────────────────────────────────────────┘
