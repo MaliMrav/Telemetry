@@ -48,12 +48,12 @@ Telemetry separates observations from the systems that transport them:
 ```text
 ┌─────────────────────┐
 │      Observation    │
-│   temperature=21.4  │
+│  temperature=21.4   │
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
 │     Data Source     │
-│   MQTT / Sensor / API│
+│ MQTT / Sensor / API │
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
