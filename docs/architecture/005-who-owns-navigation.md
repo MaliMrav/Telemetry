@@ -32,7 +32,7 @@ The same input event might instead:
 
 This leads to a more fundamental question:
 
-**Who owns the interpretation of an interaction?**
+>**Who owns the interpretation of an interaction?**
 
 ## Input Is Not Navigation
 
@@ -82,7 +82,7 @@ It has not yet decided what the interaction means to the application.
 
 That distinction is deliberate.
 
-**Input produces interaction. Context produces meaning.**
+>**Input produces interaction. Context produces meaning.**
 
 ## The Same Input Can Mean Different Things
 
@@ -266,7 +266,7 @@ The active screen does not directly replace itself with another screen.
 
 This preserves the architectural boundary:
 
-**Screens may express intent. ScreenManager owns screen transitions.**
+>**Screens may express intent. ScreenManager owns screen transitions.**
 
 ## In-Screen Interaction
 
@@ -362,7 +362,7 @@ Each layer has a distinct responsibility.
 
 Answers:
 
-What physical interaction occurred?
+>What physical interaction occurred?
 
 Examples:
 
@@ -375,7 +375,7 @@ Examples:
 
 Answers:
 
-How do we represent that interaction in a device-independent way?
+>How do we represent that interaction in a device-independent way?
 
 It produces semantic InputEvent objects.
 
@@ -383,7 +383,7 @@ It produces semantic InputEvent objects.
 
 Answers:
 
-Is this interaction a system-level command?
+>Is this interaction a system-level command?
 
 Examples:
 
@@ -397,7 +397,7 @@ Examples:
 
 Answers:
 
-Does this interaction require changing the active screen?
+>Does this interaction require changing the active screen?
 
 If so, it owns the transition.
 
@@ -405,13 +405,13 @@ If so, it owns the transition.
 
 Answers:
 
-What does this interaction mean within the current screen?
+>What does this interaction mean within the current screen?
 
 ### Active Page or Control
 
 Answers:
 
-What does this interaction mean within the current local context?
+>What does this interaction mean within the current local context?
 
 ## Why Not Let Screens Handle Everything?
 
@@ -450,7 +450,7 @@ The screen becomes coupled to concerns outside its responsibility.
 
 This violates the principle:
 
-**One Responsibility Per Capability.**
+>**One Responsibility Per Capability.**
 
 A screen should render and interpret interactions within its own application context.
 
@@ -480,7 +480,7 @@ It has become an application controller.
 
 That would violate:
 
-**Capabilities Before Hardware.**
+>**Capabilities Before Hardware.**
 
 The input system should provide an input capability.
 
@@ -579,7 +579,7 @@ It does not.
 
 The important lesson is:
 
-**The owner of an interaction is determined by the context that gives the interaction meaning.**
+>**The owner of an interaction is determined by the context that gives the interaction meaning.**
 
 ScreenManager owns screen transitions.
 
@@ -625,10 +625,10 @@ Not because Telemetry must support every input device immediately.
 
 But because the meaning of an interaction should not be permanently coupled to the mechanism that produced it.
 
-**Input is semantic.**
-
-**Meaning is contextual.**
-
-**Ownership belongs to the context that gives the interaction meaning.**
+>**Input is semantic.**
+>
+>**Meaning is contextual.**
+>
+>**Ownership belongs to the context that gives the interaction meaning.**
 
 That is the boundary.
