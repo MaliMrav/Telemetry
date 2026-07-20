@@ -152,7 +152,7 @@ The appropriate context decides what those actions mean.
 
 ## Navigation Is Only One Possible Outcome
 
-A semantic InputEvent may be handled at several levels.
+A semantic ```InputEvent``` may be handled at several levels.
 ```text
                          InputEvent
                               │
@@ -235,7 +235,7 @@ The active screen is not necessarily the owner of every input event.
 
 ## Screen-Level Navigation
 
-If the interaction is relevant to changing the active screen, that responsibility belongs to ScreenManager.
+If the interaction is relevant to changing the active screen, that responsibility belongs to ```ScreenManager```.
 
 The ownership model is:
 ```text
@@ -254,7 +254,7 @@ ScreenManager
       ▼
 Active Screen
 ```
-ScreenManager owns:
+```ScreenManager``` owns:
 
 * which screen is active
 * leaving the current screen
@@ -377,7 +377,7 @@ Answers:
 
 >How do we represent that interaction in a device-independent way?
 
-It produces semantic InputEvent objects.
+It produces semantic ```InputEvent``` objects.
 
 ### System Context
 
@@ -460,7 +460,7 @@ It should not become the universal owner of system commands.
 
 The opposite design is equally problematic.
 
-If InputManager decides:
+If ```InputManager``` decides:
 ```text
 TAP at (120, 20)
       │
@@ -573,7 +573,7 @@ Contextual Interpretation
               ▼
           Active Page
 ```
-The important lesson is not that ScreenManager owns every input event.
+The important lesson is not that ```ScreenManager``` owns every input event.
 
 It does not.
 
@@ -581,7 +581,7 @@ The important lesson is:
 
 >**The owner of an interaction is determined by the context that gives the interaction meaning.**
 
-ScreenManager owns screen transitions.
+```ScreenManager``` owns screen transitions.
 
 The active screen owns in-screen interpretation.
 
