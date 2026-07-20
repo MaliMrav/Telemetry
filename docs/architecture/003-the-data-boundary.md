@@ -1,0 +1,111 @@
+# 003 — The Data Boundary
+
+## Why should the application not care where data comes from?
+
+A weather application needs information.
+
+That information might come from:
+
+- a local sensor
+- MQTT
+- an HTTP API
+- a database
+- a simulated source
+- another system
+
+The application should not need to know which one.
+
+## The original temptation
+
+A small application often begins like this:
+
+```text
+WeatherScreen
+    │
+    ▼
+MQTT
+    │
+    ▼
+Broker
+```
+
+The screen is now coupled to the transport mechanism.
+
+It is no longer asking:
+
+> What is the current temperature?
+
+It is asking:
+
+> How do I retrieve the temperature from MQTT?
+
+Those are different questions.
+
+## Observations and information
+
+Telemetry separates observations from the systems that transport them:
+
+```text
+┌─────────────────────┐
+│      Observation    │
+│   temperature=21.4  │
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│     Data Source     │
+│   MQTT / Sensor / API│
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│     Application     │
+│   Uses information  │
+└─────────────────────┘
+```
+
+The data source obtains data.
+
+The application uses it.
+
+## The boundary
+
+```text
+Application
+    │
+    ▼
+IDataSource
+    │
+    ├── MQTT
+    ├── Local Sensor
+    ├── HTTP API
+    └── Simulation
+```
+
+The application asks for data.
+
+It does not need to know how that data arrived.
+
+## Why does this matter?
+
+If the source changes from MQTT to a local sensor, a screen coupled to MQTT must change.
+
+A screen depending on the data contract can remain unchanged.
+
+The implementation changes.
+
+The application does not.
+
+## The lesson
+
+A data source is a capability.
+
+Transport is an implementation detail.
+
+The application should consume information through a stable boundary.
+
+Telemetry deliberately stops before intelligence.
+
+It observes.
+
+It transforms observations into useful information.
+
+It leaves reasoning, automation and decision-making to systems above it.
