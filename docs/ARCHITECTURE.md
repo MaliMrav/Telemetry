@@ -1,116 +1,73 @@
 # Architecture
 
-Telemetry is a small embedded application built on top of a reusable UI and hardware abstraction framework.
+Telemetry began as a weather station.
 
-The architecture exists to answer one question:
+It is now becoming something more deliberate.
 
-> **What should change when the hardware, application, or interaction method changes?**
+The project is evolving into a reusable firmware framework whose first application happens to be a weather display.
 
-The answer should be:
+That distinction explains most of the architecture.
 
-> **Only the layer responsible for that change.**
+The question is no longer:
 
-That is the central architectural goal of Telemetry.
+> "How do we make this particular device work?"
 
----
+It is:
 
-## The Architecture at a Glance
-
-```text
-┌──────────────────────────────────────────────────────┐
-│                    Application                       │
-│                                                      │
-│  Weather presentation                                │
-│  Control Panel                                       │
-│  Information pages                                   │
-└─────────────────────────┬────────────────────────────┘
-                          │
-                          ▼
-┌──────────────────────────────────────────────────────┐
-│                    UI Framework                      │
-│                                                      │
-│  ScreenManager                                       │
-│  Screen                                              │
-│  ControlPanelScreen                                  │
-│  ControlPage                                         │
-│  InputEvent interpretation                           │
-└─────────────────────────┬────────────────────────────┘
-                          │
-                          ▼
-┌──────────────────────────────────────────────────────┐
-│                    Capabilities                      │
-│                                                      │
-│  Display · Input · Touch · Connectivity · Data · OTA │
-└─────────────────────────┬────────────────────────────┘
-                          │
-                          ▼
-┌──────────────────────────────────────────────────────┐
-│                      Hardware                        │
-│                                                      │
-│  ESP8266 / ESP32 · Displays · Touch · Input devices  │
-└──────────────────────────────────────────────────────┘
-```
-
-The important characteristic is not the number of layers. It is the direction of dependency.
-
-> **Higher-level policy should not need to know which piece of hardware happens to provide a capability.**
+> "How do we build a system in which different applications, data sources, displays and input devices can coexist without knowing unnecessary details about one another?"
 
 ---
 
-# 1. From Weather Station to Framework
+## The Architectural Direction
 
-Telemetry began as a weather station. A display could read sensors, connect to Wi-Fi, receive data, and draw the result.
-
-The architectural pressure appeared when we started asking:
-
-- What if the display changes?
-- What if the input method changes?
-- What if the application grows?
-- What if another screen is added?
-- What if the weather application is only one application using the system?
-- What if a future device has no touch screen at all?
-
-A collection of hardware-specific decisions can produce a working device. It does not necessarily produce a reusable system.
-
-The architecture therefore distinguishes between the framework and the application:
+The overall direction is:
 
 ```text
-Telemetry
-    │
-    ├── Framework
-    │   ├── Display capability
-    │   ├── Input capability
-    │   ├── Screen framework
-    │   ├── Data capability
-    │   └── System services
-    │
-    └── Application
-        └── Weather presentation
-```
-
-> **The framework should remain useful even if the weather application disappears.**
-
-See `docs/architecture/001-from-weather-station-to-framework.md`.
-
----
-
-# 2. The Display Boundary
-
-The display driver knows how to talk to a particular piece of hardware. The rest of the application should not.
-
-```text
-Screen
+Application
     │
     ▼
+Framework Capabilities
+    │
+    ▼
+Hardware Abstractions
+    │
+    ▼
+Drivers
+    │
+    ▼
+Physical Hardware
+```
+
+The application should express policy.
+
+Capabilities should provide reusable services.
+
+Drivers should translate hardware.
+
+Physical devices should remain implementation details.
+
+The architecture deliberately moves knowledge downward.
+
+---
+
+# The Major Boundaries
+
+## The Display Boundary
+
+Application code should not depend directly on a display driver.
+
+The intended relationship is:
+
+```text
+Application / Screen
+        │
+        ▼
 DisplayManager
-    │
-    ▼
-MiniGrafx
-    │
-    ▼
-ILI9341 Driver
-    │
-    ▼
+        │
+        ▼
+Display Driver
+        │
+        ▼
 Physical Display
 ```
 
@@ -122,232 +79,531 @@ display.drawLine(...);
 display.commit();
 ```
 
-It should not need to know about `ILI9341_SPI`, `MiniGrafx`, SPI pins, or framebuffer implementation details.
+It should not need to know whether the underlying hardware is:
 
-`DisplayManager` is therefore an architectural boundary, not merely a convenience wrapper.
+- ILI9341
+- ST7735
+- another display controller
 
-> **Screens consume display capability. They do not consume display hardware.**
+The screen describes what should be rendered.
 
-See `docs/architecture/002-the-display-boundary.md`.
+The display capability decides how that rendering reaches the hardware.
 
----
-
-# 3. The Data Boundary
-
-The application should consume data. It should not need to know where that data came from.
-
-A value might arrive from MQTT, a local sensor, a file, a test source, or another transport mechanism.
-
-```text
-┌────────────────────┐
-│    Data Source     │
-│                    │
-│ MQTT / Sensor /    │
-│ Test / Other       │
-└──────────┬─────────┘
-           │
-           ▼
-┌────────────────────┐
-│    IDataSource     │
-│                    │
-│  Stable contract   │
-└──────────┬─────────┘
-           │
-           ▼
-┌────────────────────┐
-│    Application     │
-│                    │
-│  Consumes data     │
-└────────────────────┘
-```
-
-> **Applications consume capabilities, not implementations.**
-
-See `docs/architecture/003-the-data-boundary.md`.
+This is the display boundary.
 
 ---
 
-# 4. Input Is Semantic
+## The Data Boundary
 
-Input is one of the most important architectural boundaries in Telemetry.
+The application should not care where observations came from.
 
-Touch, joystick, rotary encoder, keyboard, and five-way switch all produce different physical signals. The application should not need to know which one was used.
-
-```text
-┌─────────────────────┐
-│   Physical Input    │
-│                     │
-│ Touch / Encoder /   │
-│ Joystick / Switch   │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│    Input Source     │
-│                     │
-│ Detects physical    │
-│ interaction         │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│    InputManager     │
-│                     │
-│ Normalises events   │
-│ Queues events       │
-└──────────┬──────────┘
-           │
-           ▼
-      InputEvent
-           │
-           ▼
-┌─────────────────────┐
-│    ScreenManager    │
-│                     │
-│ Owns screen-level   │
-│ navigation          │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│   Active Screen     │
-│                     │
-│ Interprets event    │
-│ within its context  │
-└──────────┬──────────┘
-           │
-           ▼
-      Active Page
-```
-
-The input source does not say `"Open the About page."` It says something like `TAP + position` or `SCROLL_DOWN`.
-
-The active context decides what that means.
+The conceptual flow is:
 
 ```text
-TAP
- │
- ├── WeatherScreen
- │       └── Interpret position as a focus area
- │
- ├── ControlMenuPage
- │       └── Select a menu item
- │
- └── AboutPage
-         └── Possibly no action
+Observation
+      │
+      ▼
+Data Source
+      │
+      ▼
+Repository / Model
+      │
+      ▼
+Application
+      │
+      ▼
+Presentation
 ```
 
-> **Input devices produce interaction. Context produces meaning.**
+The source may be:
 
-See `docs/architecture/004-input-is-semantic.md`.
+- MQTT
+- a local sensor
+- a file
+- another transport
+- a future data source not yet imagined
+
+The application should consume information through a stable contract.
+
+It should not need to know how the data arrived.
+
+This keeps observation separate from presentation.
+
+It also preserves the distinction between:
+
+```text
+Observation
+```
+
+and:
+
+```text
+Information
+```
+
+Telemetry observes and presents information.
+
+It deliberately does not become an intelligence layer.
 
 ---
 
-# 5. Who Owns Navigation?
+# The Input Boundary
 
-An important architectural question is:
+Input is semantic.
 
-> **Who decides that the application should leave the current screen and show another screen?**
+The physical device should not determine application meaning.
 
-The answer is not the input device. It is not the active screen's implementation details.
+The conceptual flow is:
 
-Navigation belongs to the screen-level coordinator.
+```text
+Physical Input
+      │
+      ▼
+Input Source
+      │
+      ▼
+InputManager
+      │
+      ▼
+InputEvent
+      │
+      ▼
+Appropriate Context
+```
+
+A physical interaction might originate from:
+
+- touch
+- buttons
+- a five-way switch
+- a rotary encoder
+- a keyboard
+- a joystick
+
+The input source translates the physical interaction into a semantic action.
+
+For example:
+
+```text
+Touch
+  ↓
+TAP + position
+```
+
+or:
+
+```text
+Rotary encoder turned clockwise
+  ↓
+SCROLL_DOWN
+```
+
+The screen should not care which device produced the event.
+
+The event expresses interaction.
+
+The appropriate context determines meaning.
+
+---
+
+## The InputManager Does Not Decide Application Meaning
+
+The `InputManager` has a deliberately limited responsibility.
+
+It:
+
+- receives events from input sources
+- normalises physical interaction into semantic events
+- queues events
+- delivers events to the appropriate higher-level context
+
+It does **not** decide that:
+
+```text
+SCROLL_DOWN
+```
+
+means:
+
+```text
+Open Connectivity
+```
+
+It does **not** decide that:
+
+```text
+TAP + position
+```
+
+means:
+
+```text
+Toggle Time Format
+```
+
+And it does **not** decide that:
+
+```text
+A particular key sequence
+```
+
+means:
+
+```text
+Reset Device
+```
+
+Those are contextual decisions.
+
+The InputManager describes interaction.
+
+The appropriate owner interprets it.
+
+---
+
+# Navigation Is Only One Possible Meaning
+
+This distinction is central to the architecture.
+
+An input event may result in:
 
 ```text
 InputEvent
-    │
-    ▼
-ScreenManager
-    │
-    ├── Screen-level navigation?
-    │       │
-    │       ├── Yes → transition to another Screen
-    │       │
-    │       └── No
-    │
-    ▼
-Active Screen
-    │
-    ├── Interpret event locally
-    │
-    └── Delegate to active Page
+      │
+      ▼
+Interpretation
+      │
+      ├── System-level operation
+      │
+      ├── Screen-level navigation
+      │
+      └── Contextual interaction
 ```
 
-Not every input event is navigation. An event may mean:
+Navigation is therefore not synonymous with input.
 
-- open another screen
-- return to a previous screen
-- scroll a menu
-- select an item
-- change a presentation format
-- adjust a value
-- do nothing in the current context
+It is one possible interpretation of input.
 
-Each layer therefore answers only the questions appropriate to its scope.
-
-See `docs/architecture/005-who-owns-navigation.md` and `docs/roadmap/Sprint_Delta.md`.
-
----
-
-# 6. The Cost of Abstraction
-
-Abstraction is not automatically good.
-
-Every abstraction introduces another concept, another name, another layer of indirection, and another thing a future reader must understand.
-
-Therefore, every abstraction must earn its place.
-
-> **Does this abstraction reduce complexity overall?**
-
-`DisplayManager` is justified because it prevents every screen from knowing about display-driver details.
-
-`InputEvent` is justified because it prevents every screen from knowing about touch, joystick, encoder, or button hardware.
-
-An abstraction that merely renames an existing concept without reducing coupling is probably unnecessary.
-
-> **We abstract where a boundary protects the rest of the system from a meaningful change.**
-
-See `docs/architecture/006-the-cost-of-abstraction.md`.
-
----
-
-# 7. Dependency Direction
-
-The architecture follows a general dependency rule:
+For example:
 
 ```text
-High-level policy
-        │
-        ▼
-Application
-        │
-        ▼
-Capabilities
-        │
-        ▼
-Drivers
-        │
-        ▼
-Hardware
+SCROLL_DOWN
 ```
+
+might mean:
+
+```text
+Control Panel
+    ↓
+Connectivity
+```
+
+or:
+
+```text
+About Page
+    ↓
+Next item
+```
+
+or:
+
+```text
+Current context
+    ↓
+Adjust a value
+```
+
+The event is the same.
+
+The meaning depends on context.
+
+---
+
+# Navigation Ownership
+
+The question:
+
+> "Who owns navigation?"
+
+has a precise answer.
+
+**ScreenManager owns screen-level navigation.**
+
+But that answer must not be interpreted as:
+
+> "ScreenManager owns the meaning of every input event."
+
+The complete model is:
+
+```text
+Input Source
+      │
+      ▼
+InputManager
+      │
+      │ normalises interaction
+      ▼
+InputEvent
+      │
+      ▼
+Appropriate Context
+      │
+      ├── System-level operation?
+      │       └── System owner / capability
+      │
+      ├── Screen-level navigation?
+      │       └── ScreenManager
+      │
+      └── Contextual interaction?
+              └── Active Screen / Page
+```
+
+The distinction is:
+
+```text
+InputManager
+    owns normalisation and delivery
+
+Appropriate Context
+    owns interpretation
+
+ScreenManager
+    owns screen lifecycle and transitions
+```
+
+This is the architectural answer.
+
+---
+
+# System-Level Input
+
+Not every input belongs to the visible screen.
+
+A keyboard sequence, button sequence, or other interaction may request an operation affecting the entire device.
+
+Examples include:
+
+```text
+Hidden key sequence
+        │
+        ▼
+Factory Reset
+```
+
+or:
+
+```text
+Key sequence
+        │
+        ▼
+Enter AP Mode
+```
+
+or:
+
+```text
+Input sequence
+        │
+        ▼
+Request OTA Update
+```
+
+or:
+
+```text
+Special input
+        │
+        ▼
+Reboot Device
+```
+
+These are not screen navigation.
+
+The active screen should not need to know that a particular key sequence means:
+
+```text
+Reset the device
+```
+
+Likewise, the input source should not know that the application contains a `ConnectivityPage`.
+
+The architecture therefore separates:
+
+```text
+Physical interaction
+        ↓
+Semantic input
+        ↓
+Contextual interpretation
+        ↓
+Scope-specific ownership
+```
+
+---
+
+# Screen-Level Navigation
+
+When an input event is interpreted as a screen transition, the `ScreenManager` owns that transition.
+
+The active screen does not directly replace itself.
+
+The boundary is:
+
+```text
+InputEvent
+      │
+      ▼
+Context interprets event
+      │
+      ▼
+Screen-level navigation intent
+      │
+      ▼
+ScreenManager
+      │
+      ▼
+Screen transition
+```
+
+This preserves screen lifecycle ownership.
+
+The `ScreenManager` knows:
+
+- which screen is active
+- when a screen is entered
+- when a screen is left
+- which screen becomes active next
+
+The active screen should not need to own the collection of screens.
+
+The `ScreenManager` does.
+
+---
+
+# Contextual Interaction
+
+If the event is not a system operation and not screen-level navigation, it remains within the active context.
+
+For example:
+
+```text
+Control Panel
+    SCROLL_DOWN
+          ↓
+    Select next menu item
+```
+
+or:
+
+```text
+About Page
+    SCROLL_DOWN
+          ↓
+    Show the next information item
+```
+
+or:
+
+```text
+Weather Screen
+    TAP + position
+          ↓
+    Interpret the selected focus area
+```
+
+The active screen or page owns this interpretation.
+
+The same semantic action may have different meanings in different contexts.
+
+That is not ambiguity.
+
+That is contextual interpretation.
+
+---
+
+# The System Lifecycle
+
+The system is orchestrated through the application lifecycle.
+
+Conceptually:
+
+```text
+Boot
+  │
+  ▼
+Initialise Hardware
+  │
+  ▼
+Initialise Capabilities
+  │
+  ▼
+Initialise Services
+  │
+  ▼
+Select Initial Screen
+  │
+  ▼
+Run
+```
+
+During normal operation:
+
+```text
+SystemManager
+      │
+      ├── OTA
+      ├── Data Source
+      ├── InputManager
+      └── ScreenManager
+```
+
+The system manager coordinates the lifecycle.
+
+It should not become the owner of every responsibility.
+
+Coordination is not the same as implementation.
+
+---
+
+# Dependency Direction
 
 Dependencies should flow downward.
 
-A weather screen may depend on a data contract. It should not depend directly on an MQTT implementation.
+```text
+Application
+    │
+    ▼
+Capabilities
+    │
+    ▼
+Drivers
+    │
+    ▼
+Hardware
+```
 
-A screen may depend on `DisplayManager`. It should not depend directly on `ILI9341_SPI`.
+The opposite direction should be avoided.
 
-A screen may consume `InputEvent`. It should not depend directly on touch coordinates or encoder pulses.
+A display driver should not know about a weather screen.
 
-This keeps upper layers stable while lower layers evolve.
+A touch controller should not know about the Control Panel.
+
+An MQTT data source should not know how a temperature is rendered.
+
+The higher layer expresses policy.
+
+The lower layer provides capability.
 
 ---
 
-# 8. The Repository Reflects the Architecture
+# The Repository Should Reflect the Architecture
 
-The directory tree is part of the architecture.
+The directory structure is part of the architecture.
 
-The repository should communicate the system before a source file is opened.
+A developer should be able to understand the broad design by browsing the repository.
+
+For example:
 
 ```text
 src/
@@ -365,107 +621,130 @@ src/
 └── wifi/
 ```
 
-The structure communicates that display, input, hardware, screens, system orchestration, data, and transport are separate concerns.
+The exact structure may evolve.
 
-The repository is therefore not merely a filing system.
+The architectural intent should remain visible.
 
-> **Good architecture should be visible before the code is understood.**
+A repository should not require a developer to read every file before discovering where responsibilities live.
 
 ---
 
-# 9. The Architecture Is Deliberately Incomplete
+# Architecture Before Implementation
 
-Telemetry is not trying to solve every problem.
+A recurring principle in Telemetry is:
 
-It deliberately stops at the information boundary.
+> Architecture precedes implementation.
+
+Before adding a feature, ask:
+
+- What responsibility does this introduce?
+- Which layer owns that responsibility?
+- What should this code know?
+- What should this code not know?
+- Does the repository structure reflect the design?
+- Does the abstraction reduce complexity?
+
+Only then should implementation begin.
+
+This is why architectural work may appear slower than simply writing code.
+
+The time is not lost.
+
+It is being spent making later code more inevitable.
+
+---
+
+# The Cost of Abstraction
+
+Every boundary introduces a cost.
+
+There may be:
+
+- more files
+- more interfaces
+- more indirection
+- more concepts to explain
+
+That cost is justified only when the abstraction reduces complexity somewhere else.
+
+The question is not:
+
+> "Can we abstract this?"
+
+The question is:
+
+> "Does the abstraction make the system easier to understand, change and reuse?"
+
+If not, the abstraction should be reconsidered.
+
+This is why Telemetry deliberately avoids abstraction for its own sake.
+
+---
+
+# The Architectural Test
+
+A good design should allow a future developer to ask:
+
+> "Why is this boundary here?"
+
+and find a meaningful answer.
+
+For example:
+
+### Why is there a DisplayManager?
+
+Because screens should not depend directly on display hardware.
+
+### Why is there an InputManager?
+
+Because physical input devices should be interchangeable and screens should consume semantic actions.
+
+### Why does ScreenManager own transitions?
+
+Because screen lifecycle should have one owner.
+
+### Why is navigation only one possible interpretation of input?
+
+Because input events may also represent contextual interaction or system-level operations.
+
+### Why can a system-level input bypass screen navigation?
+
+Because not every input event belongs to the visible screen.
+
+### Why is there a data source boundary?
+
+Because the application should not care where observations originate.
+
+These are not arbitrary layers.
+
+They are answers to architectural pressures.
+
+---
+
+# The Guiding Principle
+
+Telemetry is designed around a simple direction:
 
 ```text
-Observations
-     ▲
-     │
-   Data
-     ▲
-     │
-Information
-     ▲
-     │
-Intelligence
-     ▲
-     │
-Knowledge
-     ▲
-     │
-Wisdom
+Physical World
+      │
+      ▼
+Capabilities
+      │
+      ▼
+Semantic Information
+      │
+      ▼
+Application
+      │
+      ▼
+Human Understanding
 ```
 
-Telemetry moves observations toward information. It does not attempt to become an analytics platform, automation engine, artificial intelligence system, or general-purpose operating system.
+The framework exists to make those transformations explicit.
 
-That limitation is intentional.
+The architecture is not there to make the project look sophisticated.
 
-> **A system becomes easier to understand when it knows what it is not responsible for.**
+It is there to make the project understandable.
 
----
-
-# 10. Architectural History
-
-The architecture did not appear fully formed. It emerged from pressure.
-
-The project repeatedly encountered questions such as:
-
-- What happens if the display changes?
-- What happens if the data source changes?
-- What happens if the input device changes?
-- Who owns navigation?
-- Where should context be interpreted?
-- Which abstractions are worth their cost?
-
-Each question exposed a boundary.
-
-The architecture was then shaped around that boundary.
-
-```text
-Pressure
-   │
-   ▼
-Question
-   │
-   ▼
-Architectural decision
-   │
-   ▼
-Boundary
-   │
-   ▼
-Simpler change
-```
-
-That is the reason the architecture documentation exists.
-
-It is not merely a description of the final code.
-
-It is a record of why the code became this way.
-
----
-
-# The Short Version
-
-Telemetry is built around a small number of ideas:
-
-1. **Architecture comes before implementation.**
-2. **The repository should reflect the architecture.**
-3. **Capabilities matter more than hardware.**
-4. **Applications consume contracts, not implementations.**
-5. **Input is semantic.**
-6. **Context interprets interaction.**
-7. **ScreenManager owns screen-level navigation.**
-8. **Every abstraction must earn its cost.**
-9. **Dependencies flow downward.**
-10. **The framework comes before the application.**
-
-The goal is not to create the most sophisticated architecture.
-
-The goal is to create an architecture that makes the next decision easier.
-
-And, ideally, makes the correct decision feel inevitable.
-
-> **"Ahh… now I understand why."**
+> **Good architecture should feel inevitable.**

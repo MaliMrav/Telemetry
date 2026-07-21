@@ -99,21 +99,224 @@ Diagnostics observe.
 
 Each capability should have one responsibility, and perform it well.
 
-# 7. Input Is Semantic
+# Principle #7 — Input Is Semantic
 
-Screens never care whether an action originated from:
+Input devices produce physical interaction.
+
+The framework translates that interaction into semantic events.
+
+The appropriate context interprets those events.
+
+Screens do not care whether an action originated from:
 
 - touch
 - buttons
 - rotary encoders
 - keyboards
 - gamepads
+- joysticks
 
-Screens respond only to semantic actions.
+The architectural boundary is:
 
-Input devices produce actions.
+```text
+Physical Input
+      │
+      ▼
+Input Source
+      │
+      ▼
+InputManager
+      │
+      │ normalises interaction
+      ▼
+InputEvent
+      │
+      ▼
+Appropriate Context
+```
 
-Screens consume them.
+A touch screen may produce:
+
+```text
+TAP + position
+```
+
+A rotary encoder may produce:
+
+```text
+SCROLL_UP
+```
+
+A five-way switch may produce:
+
+```text
+SELECT
+```
+
+A keyboard may produce another semantic action.
+
+The input device should not need to know what the application will do with that action.
+
+---
+
+## Input Is Not Meaning
+
+The `InputManager` normalises interaction.
+
+It does not decide application-specific meaning.
+
+For example, it should not decide that:
+
+```text
+SCROLL_DOWN
+```
+
+means:
+
+```text
+OPEN_CONNECTIVITY_PAGE
+```
+
+nor that:
+
+```text
+TAP + position
+```
+
+means:
+
+```text
+TOGGLE_TIME_FORMAT
+```
+
+nor that:
+
+```text
+A particular key sequence
+```
+
+means:
+
+```text
+RESET_DEVICE
+```
+
+Those decisions belong to the appropriate context and scope.
+
+The event describes the interaction.
+
+The context interprets it.
+
+---
+
+## Navigation Is Only One Possible Interpretation
+
+An input event may result in:
+
+```text
+InputEvent
+      │
+      ▼
+Interpretation
+      │
+      ├── System-level operation
+      │
+      ├── Screen-level navigation
+      │
+      └── Contextual interaction
+```
+
+Therefore:
+
+> **ScreenManager owns screen-level navigation.**
+
+But:
+
+> **ScreenManager does not own the meaning of every input event.**
+
+The same semantic action may mean different things in different contexts.
+
+For example:
+
+```text
+SCROLL_DOWN
+```
+
+may:
+
+- move through a Control Panel menu
+- move through an information page
+- adjust a value
+- be ignored
+
+The input event describes what happened.
+
+The appropriate owner interprets it.
+
+---
+
+## Ownership Follows Scope
+
+The conceptual ownership model is:
+
+```text
+System-level intent
+        ↓
+System owner / capability
+
+Screen-level intent
+        ↓
+ScreenManager
+
+Contextual interaction
+        ↓
+Active Screen / Page
+```
+
+This means:
+
+- system-wide operations belong to system-level owners
+- screen transitions belong to `ScreenManager`
+- local interaction belongs to the active screen or page
+
+A hidden input sequence might request:
+
+- entering AP mode
+- requesting an OTA update
+- resetting the device
+- restoring factory defaults
+
+Those operations should not be coupled to the visible screen.
+
+Likewise, the input source should not know that the application contains a `ConnectivityPage`.
+
+---
+
+## The Principle
+
+The original idea remains:
+
+> Screens never care whether an action originated from touch, buttons, rotary encoders, keyboards, or gamepads.
+
+But the architectural statement is more precise:
+
+> **Input is semantic. Meaning is contextual. Ownership follows scope.**
+
+Input devices produce semantic actions.
+
+`InputManager` normalises and transports them.
+
+The appropriate context interprets them.
+
+`ScreenManager` owns screen-level lifecycle and transitions.
+
+System-level owners handle operations affecting the device as a whole.
+
+The input device should never need to know the structure of the application.
+
+That is what makes the input boundary reusable.
+
+And that is why a touch screen is only one possible input device—not the definition of the framework.
 
 # 8. Every Abstraction Has a Cost
 
