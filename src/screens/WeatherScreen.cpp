@@ -3,6 +3,7 @@
 #include "../display/DisplayManager.h"
 #include "../models/SensorRepository.h"
 #include "../config/config.h"
+#include "../system/DebugOverlay.h"
 #include "ScreenConfig.h"
 
 #include <ArialRounded.h>
@@ -27,26 +28,37 @@ void WeatherScreen::update()
     drawWifiQuality();
     drawSensorGrid();
     display_.commit();
+    DBG_DRAW(display_);
+}
+
+bool WeatherScreen::isClockArea(
+    const InputPosition& position) const
+{
+    return position.x >= ScreenConfig::CLOCK_AREA_LEFT &&
+           position.x < ScreenConfig::CLOCK_AREA_RIGHT &&
+           position.y >= ScreenConfig::CLOCK_AREA_TOP &&
+           position.y < ScreenConfig::CLOCK_AREA_BOTTOM;
 }
 
 void WeatherScreen::onInput(const InputEvent& event)
 {
+    DBG_RECORD(event);
+
     switch (event.action)
     {
         case InputAction::TAP:
-            use12HourClock_ = !use12HourClock_;
-            break;
 
-        case InputAction::PREVIOUS_SCREEN:
-            // previous page
-            break;
+            if (event.hasPosition &&
+                isClockArea(event.position))
+            {
+                use12HourClock_ = !use12HourClock_;
+                update();
+            }
 
-        case InputAction::NEXT_SCREEN:
-            // next page
             break;
 
         case InputAction::SELECT:
-            // tile-specific action later
+            // Contextual selection.
             break;
 
         default:

@@ -264,3 +264,27 @@
 #ifndef CFG_HAS_ENCODER
   #define CFG_HAS_ENCODER false
 #endif
+
+
+// =============================================================================
+// DEVELOPER TOOLS
+// =============================================================================
+
+
+// -----------------------------------------------------------------------------
+// Debug Overlay
+// -----------------------------------------------------------------------------
+//
+// When enabled, a two-line diagnostic bar is rendered at the bottom of the
+// display after every touch event, showing:
+//   Line 1 (yellow) — the mapped InputAction and calibrated screen coordinates
+//   Line 2 (blue)   — the raw ADC values from the XPT2046 touch controller
+//
+// This is useful for diagnosing touch calibration, zone boundaries, and the
+// full input pipeline without needing a serial connection.
+//
+// Disabled by default. Enable in config_override.h by uncommenting:
+//   #define DEBUG_OVERLAY
+//
+// Compiles away completely when not defined — zero overhead in production.
+// #define DEBUG_OVERLAY

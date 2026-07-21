@@ -1,10 +1,11 @@
 #pragma once
 
-// ScreenConfig holds layout constants for the WeatherScreen tile grid.
+// ScreenConfig holds layout and interaction constants for WeatherScreen.
 //
 // Centralising these values makes it straightforward to adapt the layout
 // for different display sizes or tile counts without hunting through
-// rendering code. All pixel offsets, margins, and gaps are defined here.
+// rendering or interaction code. Pixel offsets, margins, gaps, and
+// interactive areas are defined here.
 
 #include <Arduino.h>
 
@@ -25,5 +26,10 @@ constexpr int ARROW_OFFSET = 12;
 constexpr int ARROW_WIDTH  = 10;
 constexpr int SPACING      = 6;
 constexpr int RIGHT_PAD    = 6;
+
+constexpr int CLOCK_AREA_LEFT   = 0;
+constexpr int CLOCK_AREA_TOP    = 0;
+constexpr int CLOCK_AREA_RIGHT  = 200;
+constexpr int CLOCK_AREA_BOTTOM = 58;
 
 }

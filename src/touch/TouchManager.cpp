@@ -6,6 +6,7 @@
 #include "../input/InputAction.h"
 #include "../input/InputEvent.h"
 #include "../input/InputManager.h"
+#include "../system/DebugOverlay.h"
 #include "../ui/ScreenZones.h"
 
 TouchManager::TouchManager(
@@ -55,9 +56,12 @@ void TouchManager::update()
         return;
     }
 
+    const TS_Point rawPoint = controller_.getRawPoint();
+    DBG_RAW(rawPoint.x, rawPoint.y);
+
     const TS_Point point =
         (profile_ == Profile::Calibration) ?
-            controller_.getRawPoint() :
+            rawPoint :
             controller_.getPoint();
 
     switch (profile_)

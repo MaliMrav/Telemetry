@@ -7,8 +7,10 @@
 // current value, daily min/max, and trend direction for each sensor.
 //
 // Input handling:
-//   - TAP on the header toggles 12/24-hour clock
-//   - PREVIOUS_SCREEN / NEXT_SCREEN for future multi-page navigation
+//   - TAP within the clock interaction area toggles 12/24-hour clock
+//   - other events may be interpreted contextually by the screen
+//
+// Screen-level navigation is owned by ScreenManager.
 //
 // WeatherScreen reads from SensorRepository only. It has no knowledge
 // of where the data came from (MQTT, HTTP, local sensor, etc.).
@@ -17,6 +19,7 @@
 #include "../models/SensorTile.h"
 #include "../display/DisplayManager.h"
 #include "../ui/Screen.h"
+#include "../input/InputEvent.h"
 
 class WeatherScreen : public Screen
 {
@@ -38,6 +41,9 @@ private:
     DisplayManager& display_;
 
     bool use12HourClock_ = false;
+
+    bool isClockArea(
+        const InputPosition& position) const;
 
     void drawHeader();
     void drawWifiQuality();

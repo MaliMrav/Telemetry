@@ -17,7 +17,7 @@ namespace ScreenZones
     constexpr int SCREEN_WIDTH  = 240;
     constexpr int SCREEN_HEIGHT = 320;
 
-    constexpr int HEADER_HEIGHT = 50;
+    constexpr int HEADER_HEIGHT = 58;
 
     constexpr int EDGE_WIDTH = 20;
 

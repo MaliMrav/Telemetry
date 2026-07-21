@@ -45,31 +45,38 @@ bool TouchController::calibrate(const CalibrationData& data)
 
 bool TouchController::calculateCalibration(const CalibrationData& data)
 {
-    const float leftY =
-        (data.topLeft.y + data.bottomLeft.y) * 0.5f;
+    // The XPT2046 raw axes are rotated 90 degrees relative to the ILI9341
+    // screen coordinates:
+    //   raw.x  maps to screen Y
+    //   raw.y  maps to screen X
+    //
+    // Average opposite edges to get stable reference values at each boundary,
+    // then derive scale factors and offsets.
 
-    const float rightY =
-        (data.topRight.y + data.bottomRight.y) * 0.5f;
+    // raw.y values at the left and right screen edges
+    const float rawYatLeft  = (data.topLeft.y  + data.bottomLeft.y)  * 0.5f;
+    const float rawYatRight = (data.topRight.y + data.bottomRight.y) * 0.5f;
 
-    const float topX =
-        (data.topLeft.x + data.topRight.x) * 0.5f;
+    // raw.x values at the top and bottom screen edges
+    const float rawXatTop    = (data.topLeft.x  + data.topRight.x)    * 0.5f;
+    const float rawXatBottom = (data.bottomLeft.x + data.bottomRight.x) * 0.5f;
 
-    const float bottomX =
-        (data.bottomLeft.x + data.bottomRight.x) * 0.5f;
+    // Determine direction: raw.y may increase left-to-right or right-to-left
+    // depending on hardware orientation. Store the sign in the scale factor.
+    const float rawWidth  = rawYatLeft - rawYatRight;
+    const float rawHeight = rawXatBottom - rawXatTop;
 
-    const float rawWidth  = leftY - rightY;
-    const float rawHeight = bottomX - topX;
-
-    if (rawWidth <= 0.0f || rawHeight <= 0.0f)
+    if (rawWidth == 0.0f || rawHeight == 0.0f)
     {
         return false;
     }
 
-    dx_ = static_cast<float>(TouchConfig::SCREEN_WIDTH) / rawWidth;
+    // dx_ and dy_ carry the sign, so getPoint() always uses the same formula
+    dx_ = static_cast<float>(TouchConfig::SCREEN_WIDTH)  / rawWidth;
     dy_ = static_cast<float>(TouchConfig::SCREEN_HEIGHT) / rawHeight;
 
-    ax_ = static_cast<int>(leftY);
-    ay_ = static_cast<int>(topX);
+    ax_ = static_cast<int>(rawYatLeft);
+    ay_ = static_cast<int>(rawXatTop);
 
     return true;
 }

@@ -107,12 +107,14 @@ void CalibrationScreen::drawStatus()
 
 void CalibrationScreen::onInput(const InputEvent& event)
 {
-    if (event.action != InputAction::TAP || step_ == COMPLETE)
+    if (event.action != InputAction::TAP ||
+        !event.hasPosition ||
+        step_ == COMPLETE)
     {
         return;
     }
 
-    capturePoint(event.x, event.y);
+    capturePoint(event.position.x, event.position.y);
 
     if (step_ == COMPLETE)
     {
