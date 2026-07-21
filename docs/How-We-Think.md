@@ -99,7 +99,7 @@ Diagnostics observe.
 
 Each capability should have one responsibility, and perform it well.
 
-# Principle #7 — Input Is Semantic
+# 7. Input Is Semantic
 
 Input devices produce physical interaction.
 
