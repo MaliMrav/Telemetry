@@ -33,44 +33,41 @@ void ControlPanelScreen::onInput(const InputEvent& event)
     {
         activePage_->onInput(event);
 
-        // If the active page is the menu, check if the user has selected a different page.
+        // If the active page is the menu, check whether the user has
+        // selected a different page.
         if (activePage_ == &menuPage_)
         {
-            switch (menuPage_.destination())
+            switch (menuPage_.selectedPage())
             {
-                case Destination::About:
+                case ControlPageKind::About:
                     activate(aboutPage_);
                     break;
 
-                case Destination::Connectivity:
+                case ControlPageKind::Connectivity:
                     activate(connectivityPage_);
                     break;
             }
+
             return;
         }
     }
 
     if (event.action == InputAction::BACK)
     {
-       if (activePage_ == &menuPage_)
-       {
-           //
-           // Already on the menu page, so leave Control Panel.
-           //
-       }
-       else
-       {
-           activePage_->onLeave();
-           activePage_ = &menuPage_;
-           activePage_->onEnter();
-       }
+        if (activePage_ == &menuPage_)
+        {
+            // Already on the menu page, so leave Control Panel.
+            // Screen-level navigation will be handled by ScreenManager.
+        }
+        else
+        {
+            activePage_->onLeave();
+            activePage_ = &menuPage_;
+            activePage_->onEnter();
+        }
     }
     else
     {
-        //
         // ScreenManager will return to Weather later.
-        //
     }
-
-    return;
 }

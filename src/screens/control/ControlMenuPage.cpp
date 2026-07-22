@@ -13,12 +13,12 @@ void ControlMenuPage::onInput(const InputEvent& event)
     {
         case InputAction::SCROLL_UP:
 
-            destination_ = Destination::About;
+            selectedPage_ = ControlPageKind::About;
             break;
 
         case InputAction::SCROLL_DOWN:
 
-            destination_ = Destination::Connectivity;
+            selectedPage_ = ControlPageKind::Connectivity;
             break;
 
         default:
@@ -47,7 +47,7 @@ void ControlMenuPage::render(DisplayManager& display)
     display.drawString(
         LEFT,
         y,
-        destination_ == Destination::About
+        selectedPage_ == ControlPageKind::About
             ? "> About"
             : "  About");
 
@@ -56,7 +56,7 @@ void ControlMenuPage::render(DisplayManager& display)
     display.drawString(
         LEFT,
         y,
-        destination_ == Destination::Connectivity
+        selectedPage_ == ControlPageKind::Connectivity
             ? "> Connectivity"
             : "  Connectivity");
 
