@@ -197,3 +197,105 @@ CHANGE_SCREEN
 The final meaning depends on the context.
 
 That is the architectural pressure Sprint Epsilon must resolve.
+
+---
+
+## Sprint Epsilon phases
+
+### Phase 1 — Define the Navigation Contract
+
+What is a screen?
+
+What is a screen transition?
+
+What does `ScreenManager` own?
+
+What does the active screen own?
+
+### Phase 2 — Define Navigation Requests
+
+How does a context express:
+
+> "This interaction means the user wants to leave this screen?"
+
+Without directly coupling the screen to `ScreenManager`?
+
+### Phase 3 — Implement the First Transition
+
+The thin slice:
+```text
+WeatherScreen
+      │
+      │ interaction
+      ▼
+ControlPanelScreen
+```
+and:
+```text
+ControlPanelScreen
+      │
+      │ BACK
+      ▼
+WeatherScreen
+```
+### Phase 4 — Establish Transition State
+
+Define the lifecycle:
+```text
+Current Screen
+      │
+      ▼
+leave()
+      │
+      ▼
+transition
+      │
+      ▼
+enter()
+```
+and verify that:
+
+- the old screen is left correctly
+- the new screen is entered correctly
+- state is preserved where appropriate
+- the active screen is unambiguous
+
+## The thin slice I would aim for
+
+Ultimately:
+```text
+
+                    ┌──────────────────────┐
+                    │    WeatherScreen     │
+                    │                      │
+                    │  Context interprets  │
+                    │  semantic input      │
+                    └──────────┬───────────┘
+                               │
+                               │ navigation request
+                               ▼
+                    ┌──────────────────────┐
+                    │    ScreenManager     │
+                    │                      │
+                    │  Owns transition     │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │ ControlPanelScreen   │
+                    │                      │
+                    │  Owns ControlPageKind│
+                    └──────────────────────┘
+```
+Then the reverse:
+```text
+ControlPanelScreen
+        │
+        │ BACK
+        ▼
+ScreenManager
+        │
+        ▼
+WeatherScreen
+```
+That would give us a complete, demonstrable navigation architecture without prematurely solving every possible navigation problem.
