@@ -16,3 +16,6 @@ secrets.h
 
 # Announcement Docs
 docs/announcements/*.md
+
+# Build output
+site/
