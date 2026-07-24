@@ -5,13 +5,16 @@ site_url: https://malimrav.github.io/Telemetry/
 theme:
   name: material
 
+markdown_extensions:
+  - pymdownx.highlight
+
 nav:
   - Home: README.md
   - The Why: The-Why.md
   - How We Think: How-We-Think.md
   - Architecture:
-    - System Architecture: ARCHITECTURE.md
-    - Architectural History:
+      - System Architecture: ARCHITECTURE.md
+      - Architectural History:
           - The Journey: architecture/README.md
           - "001 — From Weather Station to Framework": architecture/001-from-weather-station-to-framework.md
           - "002 — The Display Boundary": architecture/002-the-display-boundary.md
