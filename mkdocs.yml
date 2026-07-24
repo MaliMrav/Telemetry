@@ -1,0 +1,34 @@
+site_name: Telemetry
+site_description: An embedded observability framework that teaches architecture through firmware.
+site_url: https://malimrav.github.io/Telemetry/
+
+theme:
+  name: material
+
+nav:
+  - Home: README.md
+  - The Why: The-Why.md
+  - How We Think: How-We-Think.md
+  - Architecture:
+    - System Architecture: ARCHITECTURE.md
+    - Architectural History:
+          - The Journey: architecture/README.md
+          - "001 — From Weather Station to Framework": architecture/001-from-weather-station-to-framework.md
+          - "002 — The Display Boundary": architecture/002-the-display-boundary.md
+          - "003 — The Data Boundary": architecture/003-the-data-boundary.md
+          - "004 — Input Is Semantic": architecture/004-input-is-semantic.md
+          - "005 — Who Owns Navigation?": architecture/005-who-owns-navigation.md
+          - "006 — The Cost of Abstraction": architecture/006-the-cost-of-abstraction.md
+  - Reference:
+      - Overview: reference/README.md
+      - Calibration Rules: reference/CALIBRATION_RULES.md
+      - Data Layer Architecture: reference/DATA_LAYER_ARCHITECTURE.md
+      - Display Configuration: reference/DISPLAY_CONFIGURATION.md
+  - Roadmap:
+      - Overview: roadmap/README.md
+      - Sprint Alpha: roadmap/Sprint_Alpha.md
+      - Sprint Beta: roadmap/Sprint_Beta.md
+      - Sprint Gamma: roadmap/Sprint_Gamma.md
+      - Sprint Delta: roadmap/Sprint_Delta.md
+      - Sprint Epsilon: roadmap/Sprint_Epsilon.md
+
