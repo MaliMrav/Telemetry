@@ -93,17 +93,12 @@ Telemetry tries to teach **why**.
 
 The source code is only part of the project.
 
-The architecture.
-
-The design decisions.
-
-The abstractions.
-
-The naming.
-
-The trade-offs.
-
-The failures.
+- The architecture.
+- The design decisions.
+- The abstractions.
+- The naming.
+- The trade-offs.
+- The failures.
 
 Those are the interesting parts.
 
@@ -163,17 +158,12 @@ Good debugging follows the same process regardless of whether you're investigati
 
 The process is always the same.
 
-Observe.
-
-Form a hypothesis.
-
-Design an experiment.
-
-Collect evidence.
-
-Revise your model.
-
-Repeat.
+- Observe.
+- Form a hypothesis.
+- Design an experiment.
+- Collect evidence.
+- Revise your model.
+- Repeat.
 
 ## Firmware should be observable
 
@@ -184,35 +174,33 @@ Telemetry embraces logging, diagnostics, status screens and clear runtime behavi
 ## Architecture is User Experience
 
 Not just for end users.
-
-For developers.
-
-For contributors.
-
-For future-you.
+- For developers.
+- For contributors.
+- For future-you.
 
 Readable code is a feature.
 
 # Repository Structure
 
 The project intentionally separates concerns.
-
+```text
 Application  
-│  
-▼  
+    │  
+    ▼  
 ScreenManager  
-│  
-▼  
+    │  
+    ▼  
 Input Actions  
-│  
-▼  
+    │  
+    ▼  
 InputManager  
-│  
-▼  
+    │  
+    ▼  
 Hardware Profiles  
-│  
-▼  
+    │  
+    ▼  
 Physical Hardware
+```
 
 Every layer exists to reduce coupling.
 
@@ -282,7 +270,7 @@ Telemetry is my attempt to do the same.
 
 If something in this repository helps you pause, smile, and think:
 
-**"Ahh… now I understand why."**
+> **"Ahh… now I understand why."**
 
 then Telemetry has achieved exactly what it was built to do.
 
