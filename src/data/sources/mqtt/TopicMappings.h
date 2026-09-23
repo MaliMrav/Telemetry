@@ -3,25 +3,13 @@
 #include <Arduino.h>
 
 #include "../../../data/ObservationKey.h"
-#include "../../../models/WeatherObservationKeys.h"
-#include "../../../models/EnergyObservationKeys.h"
 
-#include "Topics.h"
 
-// TopicMapping binds an MQTT transport topic to a semantic observation.
+// TopicMapping binds a manually configured transport topic
+// to a semantic observation.
 //
-// MqttDataSource resolves the ObservationKey through ObservationRegistry
-// before writing to SensorRepository.
-//
-// This boundary deliberately knows about:
-//     - MQTT transport
-//     - semantic observation identity
-//
-// It does not know about:
-//     - repository storage
-//     - storage slots
-//     - ObservationHandle representation
-//     - screen implementation
+// This table is currently retained for the Weather composition slice.
+// Application-defined Energy mappings are generated from telemetry.yaml.
 
 struct TopicMapping
 {
@@ -36,6 +24,7 @@ struct TopicMapping
         TREND
     } field;
 };
+
 
 extern const TopicMapping topicMappings[];
 extern const uint8_t TOPIC_COUNT;

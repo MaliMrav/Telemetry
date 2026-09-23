@@ -8,6 +8,8 @@
 #include "../../../models/SensorRepository.h"
 
 #include "TopicMappings.h"
+#include "TelemetryMqttMappings.h"
+
 
 static WiFiClient   wifiClient;
 static PubSubClient mqttClient(wifiClient);
@@ -45,6 +47,45 @@ static TrendDirection parseTrend(
 }
 
 
+static void applyMapping(
+    ObservationHandle handle,
+    TopicMapping::Field field,
+    const String& payload)
+{
+    if (!handle.isValid())
+    {
+        return;
+    }
+
+    switch (field)
+    {
+        case TopicMapping::VALUE:
+            SensorRepository::setValue(
+                handle,
+                payload.toFloat());
+            break;
+
+        case TopicMapping::MIN:
+            SensorRepository::setMin(
+                handle,
+                payload.toFloat());
+            break;
+
+        case TopicMapping::MAX:
+            SensorRepository::setMax(
+                handle,
+                payload.toFloat());
+            break;
+
+        case TopicMapping::TREND:
+            SensorRepository::setTrend(
+                handle,
+                parseTrend(payload));
+            break;
+    }
+}
+
+
 static void onMessage(
     char* topic,
     byte* payload,
@@ -66,6 +107,50 @@ static void onMessage(
             static_cast<char>(payload[i]);
     }
 
+    // -------------------------------------------------------------------------
+    // Generated mappings
+    // -------------------------------------------------------------------------
+
+    for (unsigned int i = 0;
+         i < telemetryMqttMappingCount;
+         ++i)
+    {
+        const TelemetryMqttMapping& mapping =
+            telemetryMqttMappings[i];
+
+        if (topicStr != mapping.topic)
+        {
+            continue;
+        }
+
+        const ObservationHandle handle =
+            ObservationRegistry::resolve(
+                mapping.observation);
+
+        if (!handle.isValid())
+        {
+            Serial.println(
+                "[MQTT] Generated observation key "
+                "is not registered");
+
+            return;
+        }
+
+        if (!SensorRepository::setValue(
+                handle,
+                payloadStr.toFloat()))
+        {
+            Serial.println(
+                "[MQTT] Generated observation update failed");
+        }
+
+        return;
+    }
+
+
+    // -------------------------------------------------------------------------
+    // Existing manual Weather mappings
+    // -------------------------------------------------------------------------
 
     for (uint8_t i = 0;
          i < TOPIC_COUNT;
@@ -79,7 +164,6 @@ static void onMessage(
             continue;
         }
 
-
         const ObservationHandle handle =
             ObservationRegistry::resolve(
                 mapping.observation);
@@ -92,33 +176,10 @@ static void onMessage(
             return;
         }
 
-
-        switch (mapping.field)
-        {
-            case TopicMapping::VALUE:
-                SensorRepository::setValue(
-                    handle,
-                    payloadStr.toFloat());
-                break;
-
-            case TopicMapping::MIN:
-                SensorRepository::setMin(
-                    handle,
-                    payloadStr.toFloat());
-                break;
-
-            case TopicMapping::MAX:
-                SensorRepository::setMax(
-                    handle,
-                    payloadStr.toFloat());
-                break;
-
-            case TopicMapping::TREND:
-                SensorRepository::setTrend(
-                    handle,
-                    parseTrend(payloadStr));
-                break;
-        }
+        applyMapping(
+            handle,
+            mapping.field,
+            payloadStr);
 
         return;
     }
@@ -135,6 +196,23 @@ static bool reconnect()
         return false;
     }
 
+
+    // -------------------------------------------------------------------------
+    // Subscribe to generated application mappings
+    // -------------------------------------------------------------------------
+
+    for (unsigned int i = 0;
+         i < telemetryMqttMappingCount;
+         ++i)
+    {
+        mqttClient.subscribe(
+            telemetryMqttMappings[i].topic);
+    }
+
+
+    // -------------------------------------------------------------------------
+    // Subscribe to existing manual Weather mappings
+    // -------------------------------------------------------------------------
 
     for (uint8_t i = 0;
          i < TOPIC_COUNT;

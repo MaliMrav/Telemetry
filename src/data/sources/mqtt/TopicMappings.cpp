@@ -1,5 +1,10 @@
 #include "TopicMappings.h"
 
+#include "../../../models/WeatherObservationKeys.h"
+
+#include "Topics.h"
+
+
 const TopicMapping topicMappings[] = {
 
     // -------------------------------------------------------------------------
@@ -128,57 +133,10 @@ const TopicMapping topicMappings[] = {
         Topics::Pergola::Pressure::trend,
         WeatherObservations::PRESSURE,
         TopicMapping::TREND
-    },
-
-    // -------------------------------------------------------------------------
-    // Solar — current power
-    // -------------------------------------------------------------------------
-
-    {
-        Topics::Solar::Current::production,
-        EnergyObservations::CURRENT_POWER_PRODUCTION,
-        TopicMapping::VALUE
-    },
-
-    {
-        Topics::Solar::Current::consumption,
-        EnergyObservations::CURRENT_POWER_CONSUMPTION,
-        TopicMapping::VALUE
-    },
-
-    // -------------------------------------------------------------------------
-    // Solar — today's accumulated energy
-    // -------------------------------------------------------------------------
-
-    {
-        Topics::Solar::Today::production,
-        EnergyObservations::ENERGY_PRODUCTION_TODAY,
-        TopicMapping::VALUE
-    },
-
-    {
-        Topics::Solar::Today::consumption,
-        EnergyObservations::ENERGY_CONSUMPTION_TODAY,
-        TopicMapping::VALUE
     }
-    /*
-    // -------------------------------------------------------------------------
-    // Solar — Lifetime's accumulated energy
-    // -------------------------------------------------------------------------
-
-    {
-        Topics::Solar::Lifetime::production,
-        EnergyObservations::ENERGY_PRODUCTION_LIFETIME,
-        TopicMapping::VALUE
-    },
-
-    {
-        Topics::Solar::Lifetime::consumption,
-        EnergyObservations::ENERGY_CONSUMPTION_LIFETIME,
-        TopicMapping::VALUE
-    }
-    */
 };
 
+
 const uint8_t TOPIC_COUNT =
-    sizeof(topicMappings) / sizeof(topicMappings[0]);
+    sizeof(topicMappings) /
+    sizeof(topicMappings[0]);

@@ -18,8 +18,9 @@
 #include "../models/SensorRepository.h"
 #include "../models/SensorTile.h"
 
+#include "TelemetryComposition.h"
+
 #include "../models/WeatherObservationKeys.h"
-#include "../models/EnergyObservationKeys.h"
 
 #include "../ota/OtaManager.h"
 
@@ -130,8 +131,31 @@ namespace
     SensorRepository::initialise();
 
     // -------------------------------------------------------------------------
+    // Application composition
+    // -------------------------------------------------------------------------
+    //
+    // Energy observations are now declared in telemetry.yaml and registered
+    // by the build-time composer.
+    //
+    // The generated composition becomes the application-facing registration
+    // boundary without changing Telemetry's runtime architecture.
+    //
+
+    if (!TelemetryComposition::registerObservations())
+    {
+        Serial.println(
+            "[OBSERVATION] Generated composition registration failed");
+
+        return false;
+    }
+
+    // -------------------------------------------------------------------------
     // Weather
     // -------------------------------------------------------------------------
+    //
+    // Weather remains manually registered for now.
+    // This is intentional: we are migrating one composition slice at a time.
+    //
 
     const ObservationHandle kitchenTemperature =
         ObservationRegistry::registerObservation(
@@ -154,26 +178,6 @@ namespace
             WeatherObservations::PRESSURE);
 
     // -------------------------------------------------------------------------
-    // Solar
-    // -------------------------------------------------------------------------
-
-    const ObservationHandle solarCurrentProduction =
-        ObservationRegistry::registerObservation(
-            EnergyObservations::CURRENT_POWER_PRODUCTION);
-
-    const ObservationHandle solarTodayProduction =
-        ObservationRegistry::registerObservation(
-            EnergyObservations::ENERGY_PRODUCTION_TODAY);
-
-    const ObservationHandle solarCurrentConsumption =
-        ObservationRegistry::registerObservation(
-            EnergyObservations::CURRENT_POWER_CONSUMPTION);
-
-    const ObservationHandle solarTodayConsumption =
-        ObservationRegistry::registerObservation(
-            EnergyObservations::ENERGY_CONSUMPTION_TODAY);
-
-    // -------------------------------------------------------------------------
     // Validate registry allocation
     // -------------------------------------------------------------------------
 
@@ -181,20 +185,17 @@ namespace
         !pergolaTemperature.isValid() ||
         !kitchenHumidity.isValid() ||
         !pergolaHumidity.isValid() ||
-        !pressure.isValid() ||
-        !solarCurrentProduction.isValid() ||
-        !solarTodayProduction.isValid() ||
-        !solarCurrentConsumption.isValid() ||
-        !solarTodayConsumption.isValid())
+        !pressure.isValid())
     {
         Serial.println(
-            "[OBSERVATION] Registration failed: registry capacity exceeded");
+            "[OBSERVATION] Weather registration failed: "
+            "registry capacity exceeded");
 
         return false;
     }
 
     // -------------------------------------------------------------------------
-    // Bind handles to repository storage
+    // Bind Weather handles to repository storage
     // -------------------------------------------------------------------------
 
     const bool kitchenTemperatureRegistered =
@@ -242,58 +243,19 @@ namespace
                 PRESSURE
             });
 
-    const bool productionRegistered =
-        SensorRepository::registerObservation(
-            solarCurrentProduction,
-            SensorTile{
-                "Production",
-                "W",
-                ENERGY_W
-            });
-
-    const bool productionTodayRegistered =
-        SensorRepository::registerObservation(
-            solarTodayProduction,
-            SensorTile{
-                "Prod Today",
-                "Wh",
-                ENERGY_WH
-            });
-
-    const bool consumptionRegistered =
-        SensorRepository::registerObservation(
-            solarCurrentConsumption,
-            SensorTile{
-                "Consumption",
-                "W",
-                ENERGY_W
-            });
-
-    const bool consumptionTodayRegistered =
-        SensorRepository::registerObservation(
-            solarTodayConsumption,
-            SensorTile{
-                "Cons Today",
-                "Wh",
-                ENERGY_WH
-            });
-
     // -------------------------------------------------------------------------
-    // Validate repository bindings
+    // Validate Weather repository bindings
     // -------------------------------------------------------------------------
 
     if (!kitchenTemperatureRegistered ||
         !pergolaTemperatureRegistered ||
         !kitchenHumidityRegistered ||
         !pergolaHumidityRegistered ||
-        !pressureRegistered ||
-        !productionRegistered ||
-        !productionTodayRegistered ||
-        !consumptionRegistered ||
-        !consumptionTodayRegistered)
+        !pressureRegistered)
     {
         Serial.println(
-            "[OBSERVATION] Registration failed: repository capacity exceeded");
+            "[OBSERVATION] Weather registration failed: "
+            "repository capacity exceeded");
 
         return false;
     }
