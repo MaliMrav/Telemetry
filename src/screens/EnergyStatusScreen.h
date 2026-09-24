@@ -1,22 +1,32 @@
 #pragma once
 
-// EnergyStatusScreen displays current and today's solar-energy measurements.
+// EnergyStatusScreen displays six energy observations:
 //
-// Left column  — instantaneous power (W):
-//   Production, Consumption, Export, Battery
+//                         Production       Consumption
 //
-// Right column — today's accumulated energy (Wh):
-//   Production, Consumption, Export, Battery
+// Current                     W                W
+// Today                       Wh               Wh
+// Lifetime                    Wh               Wh
 //
-// Data is sourced from SensorRepository only. EnergyStatusScreen has no knowledge
-// of MQTT, Home Assistant, Envoy, or any other data transport.
+// The observations are supplied by the build-time Telemetry composition.
+// EnergyStatusScreen knows only the generated composition aliases and the
+// SensorRepository runtime model.
+//
+// It has no knowledge of:
+//   - MQTT
+//   - Home Assistant
+//   - Envoy
+//   - semantic ObservationKeys
+//   - repository storage slots
 //
 // Input handling:
-//   - NEXT_SCREEN     → ControlPanelScreen
-//   - PREVIOUS_SCREEN → WeatherScreen
+//   - TAP within the clock area toggles 12/24-hour clock
+//   - NEXT_SCREEN     -> ControlPanelScreen
+//   - PREVIOUS_SCREEN -> WeatherScreen
 
 #include <Arduino.h>
 
+#include "../models/SensorTile.h"
 #include "../display/DisplayManager.h"
 #include "../ui/Screen.h"
 #include "../input/InputEvent.h"
@@ -25,13 +35,15 @@
 class EnergyStatusScreen : public Screen
 {
 public:
-    explicit EnergyStatusScreen(DisplayManager& display);
+    explicit EnergyStatusScreen(
+        DisplayManager& display);
 
     void enter()  override;
     void leave()  override;
     void update() override;
 
-    ScreenIntent onInput(const InputEvent& event) override;
+    ScreenIntent onInput(
+        const InputEvent& event) override;
 
     ScreenKind kind() const override
     {
@@ -41,17 +53,22 @@ public:
 private:
     DisplayManager& display_;
 
+    bool use12HourClock_ = false;
+
     ObservationHandle currentProductionHandle_;
     ObservationHandle currentConsumptionHandle_;
-    ObservationHandle currentExportHandle_;
-    ObservationHandle currentBatteryHandle_;
 
     ObservationHandle todayProductionHandle_;
     ObservationHandle todayConsumptionHandle_;
-    ObservationHandle todayExportHandle_;
-    ObservationHandle todayBatteryHandle_;
+
+    ObservationHandle lifetimeProductionHandle_;
+    ObservationHandle lifetimeConsumptionHandle_;
+
+    bool isClockArea(
+        const InputPosition& position) const;
 
     void drawHeader();
+    void drawWifiQuality();
     void drawGrid();
 
     void drawQuadrant(
@@ -59,8 +76,12 @@ private:
         int y,
         int w,
         int h,
-        const char* label,
+        const char* rowLabel,
+        const char* columnLabel,
         ObservationHandle handle);
 
-    String formatPower(float v) const;
+    int8_t getWifiQuality();
+
+    String formatValue(
+        const SensorTile& tile) const;
 };

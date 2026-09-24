@@ -436,16 +436,28 @@ def generate_composition_header():
     return """\
 #pragma once
 
+#include "data/ObservationHandle.h"
+
 namespace TelemetryComposition
 {
+    struct ObservationHandles
+    {
+        // Generated from telemetry.yaml observation aliases.
+        ObservationHandle current_power_production;
+        ObservationHandle current_power_consumption;
+        ObservationHandle energy_production_today;
+        ObservationHandle energy_consumption_today;
+        ObservationHandle energy_production_lifetime;
+        ObservationHandle energy_consumption_lifetime;
+    };
+
     bool registerObservations();
+
+    const ObservationHandles& observations();
 }
 """
 
-
-def generate_composition_cpp(
-    observations
-):
+def generate_composition_cpp(observations):
     lines = [
         '#include "TelemetryComposition.h"',
         "",
@@ -454,6 +466,11 @@ def generate_composition_cpp(
         '#include "data/ObservationHandle.h"',
         '#include "models/SensorRepository.h"',
         '#include "models/SensorTile.h"',
+        "",
+        "namespace",
+        "{",
+        "    TelemetryComposition::ObservationHandles s_observations;",
+        "}",
         "",
         "namespace TelemetryComposition",
         "{",
@@ -464,15 +481,9 @@ def generate_composition_cpp(
 
     for observation in observations:
         alias = observation["alias"]
-        key = cpp_escape(
-            observation["key"]
-        )
-        label = cpp_escape(
-            observation["label"]
-        )
-        unit = cpp_escape(
-            observation["unit"]
-        )
+        key = cpp_escape(observation["key"])
+        label = cpp_escape(observation["label"])
+        unit = cpp_escape(observation["unit"])
         cpp_type = observation["cpp_type"]
 
         lines.extend(
@@ -483,7 +494,7 @@ def generate_composition_cpp(
                 "        ObservationRegistry::registerObservation(",
                 f"            key_{alias});",
                 "",
-                f'    if (!handle_{alias}.isValid())',
+                f"    if (!handle_{alias}.isValid())",
                 "    {",
                 "        return false;",
                 "    }",
@@ -504,6 +515,8 @@ def generate_composition_cpp(
                 "        return false;",
                 "    }",
                 "",
+                f"    s_observations.{alias} = handle_{alias};",
+                "",
             ]
         )
 
@@ -512,14 +525,17 @@ def generate_composition_cpp(
             "    return true;",
             "}",
             "",
+            "const ObservationHandles& observations()",
+            "{",
+            "    return s_observations;",
+            "}",
+            "",
             "}",
             "",
         ]
     )
 
-    return "\n".join(
-        lines
-    )
+    return "\n".join(lines)
 
 
 def generate_mqtt_mapping_header():
