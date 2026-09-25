@@ -42,31 +42,52 @@ void EnergyStatusScreen::enter()
     // Application composition
     // -------------------------------------------------------------------------
     //
-    // These names are generated directly from telemetry.yaml.
-    // EnergyStatusScreen therefore consumes the application composition without
-    // knowing the semantic ObservationKeys that back it.
+    // Observations are generated from telemetry.yaml.
+    //
+    // EnergyStatusScreen deliberately retains its current six-tile layout,
+    // but resolves those tiles through the generic composition interface
+    // rather than through generated member names.
     //
 
-    const auto& observations =
-        TelemetryComposition::observations();
+    const auto findHandle =
+        [](const char* alias) -> ObservationHandle
+        {
+            const auto* observation =
+                TelemetryComposition::findObservation(
+                    alias);
+
+            if (!observation)
+            {
+                return ObservationHandle{};
+            }
+
+            return observation->handle;
+        };
+
 
     currentProductionHandle_ =
-        observations.current_power_production;
+        findHandle(
+            "current_power_production");
 
     currentConsumptionHandle_ =
-        observations.current_power_consumption;
+        findHandle(
+            "current_power_consumption");
 
     todayProductionHandle_ =
-        observations.energy_production_today;
+        findHandle(
+            "energy_production_today");
 
     todayConsumptionHandle_ =
-        observations.energy_consumption_today;
+        findHandle(
+            "energy_consumption_today");
 
     lifetimeProductionHandle_ =
-        observations.energy_production_lifetime;
+        findHandle(
+            "energy_production_lifetime");
 
     lifetimeConsumptionHandle_ =
-        observations.energy_consumption_lifetime;
+        findHandle(
+            "energy_consumption_lifetime");
 }
 
 
@@ -484,7 +505,7 @@ void EnergyStatusScreen::drawQuadrant(
 
 
     // -------------------------------------------------------------------------
-    // Observation type / measurement label
+    // Measurement label
     // -------------------------------------------------------------------------
 
     display_.setFont(
@@ -510,65 +531,65 @@ String EnergyStatusScreen::formatValue(
     }
 
 
-    const float value =
-        tile.value;
+    // -------------------------------------------------------------------------
+    // Generic display scaling
+    // -------------------------------------------------------------------------
+    //
+    // Display policy is supplied by telemetry.yaml through the generated
+    // composition and attached to SensorTile.
+    //
 
-
-    switch (tile.type)
+    if (tile.displayScales &&
+        tile.displayScaleCount > 0)
     {
-        case ENERGY_W:
+        const float absoluteValue =
+            fabs(tile.value);
+
+        const SensorDisplayScale* selected =
+            nullptr;
+
+        for (uint8_t i = 0;
+             i < tile.displayScaleCount;
+             ++i)
         {
-            const float absolute =
-                fabs(value);
-
-            if (absolute >= 1000.0f)
+            if (absoluteValue >=
+                tile.displayScales[i].threshold)
             {
-                return String(
-                    value / 1000.0f,
-                    1) +
-                    " kW";
+                selected =
+                    &tile.displayScales[i];
             }
-
-            return String(
-                value,
-                1) +
-                " W";
         }
 
-
-        case ENERGY_WH:
+        if (selected)
         {
-            const float absolute =
-                fabs(value);
-
-            if (absolute >= 1000000.0f)
-            {
-                return String(
-                    value / 1000000.0f,
-                    1) +
-                    " MWh";
-            }
-
-            if (absolute >= 1000.0f)
-            {
-                return String(
-                    value / 1000.0f,
-                    1) +
-                    " kWh";
-            }
-
             return String(
-                value,
-                0) +
-                " Wh";
+                       tile.value /
+                       selected->divisor,
+                       selected->precision) +
+                   " " +
+                   selected->unit;
         }
-
-
-        default:
-            return String(
-                value,
-                1) +
-                " " +
-                tile.unit;
     }
+
+
+    // -------------------------------------------------------------------------
+    // Generic fallback
+    // -------------------------------------------------------------------------
+
+    String result =
+        String(
+            tile.value,
+            1);
+
+    if (tile.unit &&
+        tile.unit[0] != '\0')
+    {
+        result +=
+            " ";
+
+        result +=
+            tile.unit;
+    }
+
+    return result;
 }
