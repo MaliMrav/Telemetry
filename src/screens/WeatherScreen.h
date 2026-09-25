@@ -59,6 +59,10 @@ private:
     void drawTrendArrow(int x, int y, TrendDirection t);
 
     int8_t getWifiQuality();
-    String formatValue(SensorType type, float v);
-    DisplayManager::Color getColor(SensorType t);
+    String formatValue(
+        const SensorTile& tile,
+        float v);
+
+    DisplayManager::Color getColor(
+        const SensorTile& tile);
 };

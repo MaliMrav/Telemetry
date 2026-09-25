@@ -257,7 +257,8 @@ void WeatherScreen::drawSensorGrid()
             tileH);
 
         display_.setFont(ArialRoundedMTBold_14);
-        display_.setColor(getColor(s->type));
+        display_.setColor(
+            getColor(*s));
         display_.setTextAlignment(DisplayManager::CENTER);
 
         display_.drawString(
@@ -268,7 +269,8 @@ void WeatherScreen::drawSensorGrid()
         display_.setFont(ArialMT_Plain_24);
 
         String valueStr =
-            formatValue(s->type, s->value) + s->unit;
+            formatValue(*s, s->value) +
+            (s->unit ? s->unit : "");
 
         int valueWidth =
             display_.getStringWidth(valueStr);
@@ -336,9 +338,9 @@ void WeatherScreen::drawSensorGrid()
             !isnan(s->maxVal))
         {
             String mm =
-                formatValue(s->type, s->minVal) +
+                formatValue(*s, s->minVal) +
                 " / " +
-                formatValue(s->type, s->maxVal);
+                formatValue(*s, s->maxVal);
 
             display_.drawString(
                 x + w / 2,
@@ -387,7 +389,7 @@ void WeatherScreen::drawTrendArrow(int x, int y, TrendDirection t)
 }
 
 String WeatherScreen::formatValue(
-    SensorType type,
+    const SensorTile& tile,
     float v)
 {
     if (isnan(v))
@@ -395,23 +397,74 @@ String WeatherScreen::formatValue(
         return "--";
     }
 
-    switch (type)
+    if (tile.displayScales &&
+        tile.displayScaleCount > 0)
     {
-        case TEMP:
-            return String(v, 1);
+        const float absoluteValue =
+            fabs(v);
 
-        case HUMIDITY:
-        case PRESSURE:
-            return String((int)round(v));
+        const SensorDisplayScale* selected =
+            nullptr;
 
-        default:
-            return "--";
+        for (uint8_t i = 0;
+             i < tile.displayScaleCount;
+             ++i)
+        {
+            if (absoluteValue >=
+                tile.displayScales[i].threshold)
+            {
+                selected =
+                    &tile.displayScales[i];
+            }
+        }
+
+        if (selected)
+        {
+            return String(
+                       v /
+                       selected->divisor,
+                       selected->precision) +
+                   " " +
+                   selected->unit;
+        }
     }
+
+    // Transitional Weather presentation.
+    //
+    // Weather has not yet been migrated to telemetry.yaml,
+    // so retain its existing formatting behaviour without
+    // reintroducing SensorType.
+
+    if (tile.unit &&
+        strcmp(tile.unit, "°C") == 0)
+    {
+        return String(v, 1);
+    }
+
+    return String(
+        (int)round(v));
 }
 
-DisplayManager::Color WeatherScreen::getColor(SensorType t)
+
+DisplayManager::Color WeatherScreen::getColor(
+    const SensorTile& tile)
 {
-    if (t == HUMIDITY) return DisplayManager::BLUE;
-    if (t == PRESSURE) return DisplayManager::YELLOW;
+    // Transitional Weather presentation.
+    //
+    // These colours belong to the Weather screen, not to
+    // SensorTile's runtime data model.
+
+    if (tile.unit &&
+        strcmp(tile.unit, "%") == 0)
+    {
+        return DisplayManager::BLUE;
+    }
+
+    if (tile.unit &&
+        strcmp(tile.unit, "hPa") == 0)
+    {
+        return DisplayManager::YELLOW;
+    }
+
     return DisplayManager::WHITE;
 }

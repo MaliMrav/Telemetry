@@ -947,12 +947,34 @@ def generate_composition_cpp(
             "},"
         )
 
-    lines.extend(
-        [
-            "    };",
-            "",
-        ]
-    )
+        lines.extend(
+            [
+                f'    constexpr ObservationKey key_{alias}{{"{key}"}};',
+                "",
+                f'    const ObservationHandle handle_{alias} =',
+                "        ObservationRegistry::registerObservation(",
+                f"            key_{alias});",
+                "",
+                f"    if (!handle_{alias}.isValid())",
+                "    {",
+                "        return false;",
+                "    }",
+                "",
+                f"    SensorTile tile_{alias};",
+                f'    tile_{alias}.label = "{label}";',
+                f'    tile_{alias}.unit = "{unit}";',
+                "",
+                f'    if (!SensorRepository::registerObservation(',
+                f"            handle_{alias},",
+                f"            tile_{alias}))",
+                "    {",
+                "        return false;",
+                "    }",
+                "",
+                f"    s_observations.{alias} = handle_{alias};",
+                "",
+            ]
+        )
 
     # -------------------------------------------------------------------------
     # Screen item arrays
