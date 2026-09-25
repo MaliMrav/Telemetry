@@ -42,10 +42,11 @@ GENERATED_BUILD_DIR = (
 # Supported Telemetry capabilities
 # =============================================================================
 #
-# The composer knows capabilities, not domains.
+# The composer knows capabilities, not application domains.
 #
-# MQTT is currently the only source type that this first composer slice
-# translates into runtime source metadata.
+# MQTT is currently the only transport/source type translated into runtime
+# source metadata. Observation types themselves remain opaque strings supplied
+# by telemetry.yaml.
 #
 
 SUPPORTED_SOURCE_TYPES = {
@@ -176,6 +177,18 @@ def cpp_escape(value):
         .replace("\n", "\\n")
         .replace("\r", "\\r")
     )
+
+
+def cpp_float(value):
+    """
+    Render a Python numeric value as a C++ floating-point literal.
+    """
+    rendered = f"{float(value):.9g}"
+
+    if "." not in rendered and "e" not in rendered.lower():
+        rendered += ".0"
+
+    return rendered + "f"
 
 
 # =============================================================================
@@ -333,13 +346,25 @@ def validate_display(
 def validate_observations(
     observations
 ):
+    if not isinstance(
+        observations,
+        dict
+    ):
+        fail(
+            "'observations' must be a mapping"
+        )
+
     normalised = []
 
     aliases = set()
     semantic_keys = set()
-    mqtt_topics = set()
+    source_values = set()
 
     for alias, definition in observations.items():
+
+        # ---------------------------------------------------------------------
+        # Alias
+        # ---------------------------------------------------------------------
 
         if (
             not isinstance(alias, str)
@@ -357,6 +382,10 @@ def validate_observations(
             )
 
         aliases.add(alias)
+
+        # ---------------------------------------------------------------------
+        # Definition
+        # ---------------------------------------------------------------------
 
         if not isinstance(
             definition,
@@ -507,14 +536,19 @@ def validate_observations(
                 "non-empty topic"
             )
 
-        if source_topic in mqtt_topics:
+        source_identity = (
+            source_type,
+            source_topic
+        )
+
+        if source_identity in source_values:
             fail(
-                f"Duplicate MQTT topic: "
-                f"{source_topic}"
+                f"Duplicate source mapping: "
+                f"{source_type}:{source_topic}"
             )
 
-        mqtt_topics.add(
-            source_topic
+        source_values.add(
+            source_identity
         )
 
         normalised.append(
@@ -725,24 +759,16 @@ def validate_screens(
 
 def generate_composition_header():
 
-    return """\
+    return """\\
 #pragma once
 
 #include <stdint.h>
 
 #include "data/ObservationHandle.h"
+#include "models/SensorPresentation.h"
 
 namespace TelemetryComposition
 {
-
-struct ObservationDisplayScale
-{
-    float threshold;
-    float divisor;
-    uint8_t precision;
-    const char* unit;
-};
-
 
 struct ObservationDefinition
 {
@@ -757,7 +783,7 @@ struct ObservationDefinition
 
     ObservationHandle handle;
 
-    const ObservationDisplayScale* displayScales;
+    const SensorDisplayScale* displayScales;
     uint8_t displayScaleCount;
 };
 
@@ -843,45 +869,46 @@ def generate_composition_cpp(
         if not scales:
             continue
 
-        lines.append(
-            f"    constexpr "
-            f"TelemetryComposition::"
-            f"ObservationDisplayScale "
-            f"displayScales_{index}[] ="
-        )
-
-        lines.append(
-            "    {"
+        lines.extend(
+            [
+                f"    constexpr SensorDisplayScale "
+                f"displayScales_{index}[] =",
+                "    {",
+            ]
         )
 
         for scale in scales:
             lines.append(
                 "        {"
-                f"{scale['threshold']}f, "
-                f"{scale['divisor']}f, "
+                f"{cpp_float(scale['threshold'])}, "
+                f"{cpp_float(scale['divisor'])}, "
                 f"{scale['precision']}, "
-                f'"{cpp_escape(scale["unit"])}"'
+                f'\"{cpp_escape(scale["unit"])}\"'
                 "},"
             )
 
-        lines.append(
-            "    };"
+        lines.extend(
+            [
+                "    };",
+                "",
+            ]
         )
-
-        lines.append("")
 
     # -------------------------------------------------------------------------
     # Observation definitions
     # -------------------------------------------------------------------------
+    #
+    # IMPORTANT:
+    # This is a namespace-scope generated table. Runtime registration code is
+    # emitted only after the table has been completely closed.
+    #
 
-    lines.append(
-        "    TelemetryComposition::"
-        "ObservationDefinition "
-        "observationDefinitions[] ="
-    )
-
-    lines.append(
-        "    {"
+    lines.extend(
+        [
+            "    TelemetryComposition::"
+            "ObservationDefinition observationDefinitions[] =",
+            "    {",
+        ]
     )
 
     for index, observation in enumerate(
@@ -923,11 +950,9 @@ def generate_composition_cpp(
             scale_pointer = (
                 f"displayScales_{index}"
             )
-
             scale_count = str(
                 len(scales)
             )
-
         else:
             scale_pointer = "nullptr"
             scale_count = "0"
@@ -947,34 +972,12 @@ def generate_composition_cpp(
             "},"
         )
 
-        lines.extend(
-            [
-                f'    constexpr ObservationKey key_{alias}{{"{key}"}};',
-                "",
-                f'    const ObservationHandle handle_{alias} =',
-                "        ObservationRegistry::registerObservation(",
-                f"            key_{alias});",
-                "",
-                f"    if (!handle_{alias}.isValid())",
-                "    {",
-                "        return false;",
-                "    }",
-                "",
-                f"    SensorTile tile_{alias};",
-                f'    tile_{alias}.label = "{label}";',
-                f'    tile_{alias}.unit = "{unit}";',
-                "",
-                f'    if (!SensorRepository::registerObservation(',
-                f"            handle_{alias},",
-                f"            tile_{alias}))",
-                "    {",
-                "        return false;",
-                "    }",
-                "",
-                f"    s_observations.{alias} = handle_{alias};",
-                "",
-            ]
-        )
+    lines.extend(
+        [
+            "    };",
+            "",
+        ]
+    )
 
     # -------------------------------------------------------------------------
     # Screen item arrays
@@ -988,14 +991,13 @@ def generate_composition_cpp(
             screen["rows"]
         ):
 
-            lines.append(
-                f"    constexpr const char* "
-                f"screen_{screen_index}_row_"
-                f"{row_index}_items[] ="
-            )
-
-            lines.append(
-                "    {"
+            lines.extend(
+                [
+                    f"    constexpr const char* const "
+                    f"screen_{screen_index}_row_"
+                    f"{row_index}_items[] =",
+                    "    {",
+                ]
             )
 
             for alias in row["items"]:
@@ -1003,20 +1005,20 @@ def generate_composition_cpp(
                     f'        "{cpp_escape(alias)}",'
                 )
 
-            lines.append(
-                "    };"
+            lines.extend(
+                [
+                    "    };",
+                    "",
+                ]
             )
 
-            lines.append("")
-
-        lines.append(
-            f"    constexpr "
-            f"TelemetryComposition::ScreenRow "
-            f"screen_{screen_index}_rows[] ="
-        )
-
-        lines.append(
-            "    {"
+        lines.extend(
+            [
+                f"    constexpr "
+                f"TelemetryComposition::ScreenRow "
+                f"screen_{screen_index}_rows[] =",
+                "    {",
+            ]
         )
 
         for row_index, row in enumerate(
@@ -1039,27 +1041,25 @@ def generate_composition_cpp(
                 "},"
             )
 
-        lines.append(
-            "    };"
+        lines.extend(
+            [
+                "    };",
+                "",
+            ]
         )
-
-        lines.append("")
 
     # -------------------------------------------------------------------------
     # Screen definitions
     # -------------------------------------------------------------------------
 
     if screens:
-
-        lines.append(
-            "    constexpr "
-            "TelemetryComposition::"
-            "ScreenDefinition "
-            "screenDefinitions[] ="
-        )
-
-        lines.append(
-            "    {"
+        lines.extend(
+            [
+                "    constexpr "
+                "TelemetryComposition::"
+                "ScreenDefinition screenDefinitions[] =",
+                "    {",
+            ]
         )
 
         for index, screen in enumerate(
@@ -1115,6 +1115,10 @@ def generate_composition_cpp(
     # -------------------------------------------------------------------------
     # Observation registration
     # -------------------------------------------------------------------------
+    #
+    # This section consumes the generated definition table. It does not emit
+    # more initialiser entries into that table.
+    #
 
     lines.extend(
         [
@@ -1122,8 +1126,7 @@ def generate_composition_cpp(
             "{",
             "",
             "    for (",
-            "        auto& observation : "
-            "observationDefinitions",
+            "        auto& observation : observationDefinitions",
             "    )",
             "    {",
             "",
@@ -1140,20 +1143,15 @@ def generate_composition_cpp(
             "            return false;",
             "        }",
             "",
-            "        if (!SensorRepository::"
-            "registerObservation(",
+            "        SensorTile tile{};",
+            "        tile.label = observation.label;",
+            "        tile.unit = observation.unit;",
+            "        tile.displayScales = observation.displayScales;",
+            "        tile.displayScaleCount = observation.displayScaleCount;",
+            "",
+            "        if (!SensorRepository::registerObservation(",
             "                observation.handle,",
-            "                SensorTile{",
-            "                    observation.label,",
-            "                    observation.unit,",
-            "                    0.0f,",
-            "                    0.0f,",
-            "                    0.0f,",
-            "                    TREND_NONE,",
-            "                    false",
-            "                    observation.displayScales",
-            "                    observation.displayScaleCount"
-            "                }))",
+            "                tile))",
             "        {",
             "            return false;",
             "        }",
@@ -1171,8 +1169,7 @@ def generate_composition_cpp(
 
     lines.extend(
         [
-            "const ObservationDefinition* "
-            "observations()",
+            "const ObservationDefinition* observations()",
             "{",
             "    return observationDefinitions;",
             "}",
@@ -1185,8 +1182,7 @@ def generate_composition_cpp(
             "    );",
             "}",
             "",
-            "const ObservationDefinition* "
-            "findObservation(",
+            "const ObservationDefinition* findObservation(",
             "    const char* alias)",
             "{",
             "    if (!alias)",
@@ -1195,8 +1191,7 @@ def generate_composition_cpp(
             "    }",
             "",
             "    for (",
-            "        const auto& observation : "
-            "observationDefinitions",
+            "        const auto& observation : observationDefinitions",
             "    )",
             "    {",
             "        if (std::strcmp(",
@@ -1210,8 +1205,7 @@ def generate_composition_cpp(
             "    return nullptr;",
             "}",
             "",
-            "const ObservationDefinition* "
-            "findObservationBySource(",
+            "const ObservationDefinition* findObservationBySource(",
             "    const char* sourceType,",
             "    const char* source)",
             "{",
@@ -1221,8 +1215,7 @@ def generate_composition_cpp(
             "    }",
             "",
             "    for (",
-            "        const auto& observation : "
-            "observationDefinitions",
+            "        const auto& observation : observationDefinitions",
             "    )",
             "    {",
             "        if (std::strcmp(",
@@ -1262,8 +1255,7 @@ def generate_composition_cpp(
                 "    );",
                 "}",
                 "",
-                "const ScreenDefinition* "
-                "findScreen(",
+                "const ScreenDefinition* findScreen(",
                 "    const char* id)",
                 "{",
                 "    if (!id)",
@@ -1272,8 +1264,7 @@ def generate_composition_cpp(
                 "    }",
                 "",
                 "    for (",
-                "        const auto& screen : "
-                "screenDefinitions",
+                "        const auto& screen : screenDefinitions",
                 "    )",
                 "    {",
                 "        if (std::strcmp(",
@@ -1303,8 +1294,7 @@ def generate_composition_cpp(
                 "    return 0;",
                 "}",
                 "",
-                "const ScreenDefinition* "
-                "findScreen(",
+                "const ScreenDefinition* findScreen(",
                 "    const char*)",
                 "{",
                 "    return nullptr;",
@@ -1347,6 +1337,30 @@ def remove_stale_outputs():
 
 
 # =============================================================================
+# File writing
+# =============================================================================
+
+def write_file(
+    path,
+    content
+):
+    path.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    path.write_text(
+        content,
+        encoding="utf-8"
+    )
+
+    log(
+        f"Generated "
+        f"{path.relative_to(PROJECT_DIR)}"
+    )
+
+
+# =============================================================================
 # Compose
 # =============================================================================
 
@@ -1354,21 +1368,17 @@ def compose():
 
     document = load_document()
 
-    observations_document = (
-        document.get(
-            "observations",
-            {}
-        )
+    observations_document = document.get(
+        "observations",
+        {}
     )
 
-    screens_document = (
-        document.get(
-            "screens",
-            {}
-        )
+    screens_document = document.get(
+        "screens",
+        {}
     )
 
-    observations, aliases = (
+    observations, observation_aliases = (
         validate_observations(
             observations_document
         )
@@ -1376,7 +1386,7 @@ def compose():
 
     screens = validate_screens(
         screens_document,
-        aliases
+        observation_aliases
     )
 
     GENERATED_DIR.mkdir(
@@ -1405,30 +1415,6 @@ def compose():
         f"Composition complete: "
         f"{len(observations)} observation(s), "
         f"{len(screens)} screen(s)"
-    )
-
-
-# =============================================================================
-# File writing
-# =============================================================================
-
-def write_file(
-    path,
-    content
-):
-    path.parent.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    path.write_text(
-        content,
-        encoding="utf-8"
-    )
-
-    log(
-        f"Generated "
-        f"{path.relative_to(PROJECT_DIR)}"
     )
 
 
