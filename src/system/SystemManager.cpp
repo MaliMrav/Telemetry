@@ -204,7 +204,13 @@ namespace
             SensorTile{
                 "Kitchen Temp",
                 "°C",
-                TEMP
+                    NAN,
+                    NAN,
+                    NAN,
+                    TREND_NONE,
+                    false,
+                    nullptr,
+                    0
             });
 
     const bool pergolaTemperatureRegistered =
@@ -213,7 +219,13 @@ namespace
             SensorTile{
                 "Pergola Temp",
                 "°C",
-                TEMP
+                    NAN,
+                    NAN,
+                    NAN,
+                    TREND_NONE,
+                    false,
+                    nullptr,
+                    0
             });
 
     const bool kitchenHumidityRegistered =
@@ -222,7 +234,13 @@ namespace
             SensorTile{
                 "Kitchen Hum",
                 "%",
-                HUMIDITY
+                    NAN,
+                    NAN,
+                    NAN,
+                    TREND_NONE,
+                    false,
+                    nullptr,
+                    0
             });
 
     const bool pergolaHumidityRegistered =
@@ -231,7 +249,13 @@ namespace
             SensorTile{
                 "Pergola Hum",
                 "%",
-                HUMIDITY
+                    NAN,
+                    NAN,
+                    NAN,
+                    TREND_NONE,
+                    false,
+                    nullptr,
+                    0
             });
 
     const bool pressureRegistered =
@@ -240,7 +264,13 @@ namespace
             SensorTile{
                 "Pressure",
                 "hPa",
-                PRESSURE
+                    NAN,
+                    NAN,
+                    NAN,
+                    TREND_NONE,
+                    false,
+                    nullptr,
+                    0
             });
 
     // -------------------------------------------------------------------------
@@ -293,7 +323,13 @@ namespace
                 SensorTile{
                     "Pipeline Test",
                     "W",
-                    ENERGY_W
+                    NAN,
+                    NAN,
+                    NAN,
+                    TREND_NONE,
+                    false,
+                    nullptr,
+                    0
                 });
 
         if (!registered)
