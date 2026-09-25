@@ -425,7 +425,7 @@ void EnergyStatusScreen::drawQuadrant(
 
 
     // -------------------------------------------------------------------------
-    // Quadrant frame
+    // Tile frame
     // -------------------------------------------------------------------------
 
     display_.setColor(
@@ -439,34 +439,22 @@ void EnergyStatusScreen::drawQuadrant(
 
 
     // -------------------------------------------------------------------------
-    // Observation label
+    // Context heading
     // -------------------------------------------------------------------------
 
     display_.setTextAlignment(
         DisplayManager::CENTER);
 
     display_.setFont(
-        ArialMT_Plain_10);
+        ArialRoundedMTBold_14);
 
     display_.setColor(
-        DisplayManager::BLUE);
+        DisplayManager::YELLOW);
 
     display_.drawString(
         x + w / 2,
         y + 3,
         rowLabel);
-
-
-    display_.setFont(
-        ArialRoundedMTBold_14);
-
-    display_.setColor(
-        DisplayManager::WHITE);
-
-    display_.drawString(
-        x + w / 2,
-        y + 15,
-        columnLabel);
 
 
     // -------------------------------------------------------------------------
@@ -483,7 +471,7 @@ void EnergyStatusScreen::drawQuadrant(
         DisplayManager::CENTER);
 
 
-    String value =
+    const String value =
         tile
             ? formatValue(*tile)
             : "--";
@@ -493,6 +481,22 @@ void EnergyStatusScreen::drawQuadrant(
         x + w / 2,
         y + h / 2 - 7,
         value);
+
+
+    // -------------------------------------------------------------------------
+    // Observation type / measurement label
+    // -------------------------------------------------------------------------
+
+    display_.setFont(
+        ArialMT_Plain_10);
+
+    display_.setColor(
+        DisplayManager::BLUE);
+
+    display_.drawString(
+        x + w / 2,
+        y + h - 14,
+        columnLabel);
 }
 
 

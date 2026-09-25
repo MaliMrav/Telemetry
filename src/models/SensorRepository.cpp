@@ -40,16 +40,7 @@ void SensorRepository::initialise()
          i < MAX_SENSORS;
          ++i)
     {
-        sensorTiles[i] = SensorTile{
-            nullptr,
-            nullptr,
-            TEMP,
-            NAN,
-            NAN,
-            NAN,
-            TREND_NONE,
-            false
-        };
+        sensorTiles[i] = SensorTile{};
 
         observationHandles[i] =
             ObservationHandle{};

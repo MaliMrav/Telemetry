@@ -1,42 +1,50 @@
 #pragma once
 
-// SensorTile is the display model for a single sensor reading.
+// SensorTile is the runtime presentation model for a single observation.
 //
-// It holds everything a screen needs to render one data tile:
-// label, unit, current value, daily min/max, trend direction, and
-// a validity flag that screens use to show placeholder text until
-// real data arrives.
+// It deliberately contains no domain-specific value type such as:
+//   power, energy, temperature, humidity, etc.
 //
-// SensorTile is a plain data struct. It has no behaviour of its own.
-// Data sources write to it via SensorRepository. Screens read it via
-// SensorRepository::getTile().
+// Semantic meaning belongs to the ObservationDefinition generated from
+// telemetry.yaml.
+//
+// SensorTile contains only:
+//   - presentation identity
+//   - canonical unit
+//   - runtime value
+//   - min/max
+//   - trend
+//   - validity
+//   - generic display scaling metadata
+//
+// This keeps the runtime data model independent of application domains.
 
-enum SensorType {
-  TEMP,
-  HUMIDITY,
-  PRESSURE,
-  ENERGY_W,   // instantaneous power in Watts
-  ENERGY_WH   // accumulated energy in Watt-hours
+#include <Arduino.h>
+
+#include "SensorPresentation.h"
+
+
+enum TrendDirection
+{
+    TREND_NONE,
+    TREND_UP,
+    TREND_DOWN,
+    TREND_FLAT
 };
 
-enum TrendDirection {
-  TREND_NONE,
-  TREND_UP,
-  TREND_DOWN,
-  TREND_FLAT
-};
 
-struct SensorTile {
+struct SensorTile
+{
+    const char* label = nullptr;
+    const char* unit = nullptr;
 
-  const char* label;
-  const char* unit;
+    float value = NAN;
+    float minVal = NAN;
+    float maxVal = NAN;
 
-  SensorType type;
+    TrendDirection trend = TREND_NONE;
+    bool valid = false;
 
-  float value;
-  float minVal;
-  float maxVal;
-
-  TrendDirection trend;
-  bool valid;
+    const SensorDisplayScale* displayScales = nullptr;
+    uint8_t displayScaleCount = 0;
 };

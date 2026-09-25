@@ -1,69 +1,61 @@
 from pathlib import Path
 import importlib
-import re
 import subprocess
 
 Import("env")
 
 
-# -----------------------------------------------------------------------------
-# Guard against non-build PlatformIO invocations
-# -----------------------------------------------------------------------------
+# =============================================================================
+# Configuration
+# =============================================================================
 
 if env.IsIntegrationDump():
     Return()
 
 
-# -----------------------------------------------------------------------------
-# Configuration
-# -----------------------------------------------------------------------------
+PROJECT_DIR = Path(
+    env.subst("$PROJECT_DIR")
+).resolve()
 
-PROJECT_DIR = Path(env.subst("$PROJECT_DIR")).resolve()
-BUILD_DIR = Path(env.subst("$BUILD_DIR")).resolve()
+BUILD_DIR = Path(
+    env.subst("$BUILD_DIR")
+).resolve()
 
-TELEMETRY_YAML = PROJECT_DIR / "telemetry.yaml"
+TELEMETRY_YAML = (
+    PROJECT_DIR /
+    "telemetry.yaml"
+)
 
-# Generated source files are deliberately kept inside the PlatformIO build
-# tree. They are derived artifacts and can therefore be regenerated at any
-# time from telemetry.yaml.
 GENERATED_DIR = (
-    BUILD_DIR
-    / "generated"
-    / "telemetry"
+    BUILD_DIR /
+    "generated" /
+    "telemetry"
 )
 
-# Keep generated object/build output separate from the generated source tree.
 GENERATED_BUILD_DIR = (
-    GENERATED_DIR
-    / "build"
+    GENERATED_DIR /
+    "build"
 )
 
 
-SUPPORTED_TYPES = {
-    "power": {
-        "cpp_type": "ENERGY_W",
-        "unit": "W",
-    },
-    "energy": {
-        "cpp_type": "ENERGY_WH",
-        "unit": "Wh",
-    },
-}
-
+# =============================================================================
+# Supported Telemetry capabilities
+# =============================================================================
+#
+# The composer knows capabilities, not domains.
+#
+# MQTT is currently the only source type that this first composer slice
+# translates into runtime source metadata.
+#
 
 SUPPORTED_SOURCE_TYPES = {
     "mqtt",
 }
 
 
-CPP_IDENTIFIER_RE = re.compile(
-    r"^[A-Za-z_][A-Za-z0-9_]*$"
-)
-
-
-# -----------------------------------------------------------------------------
-# Utility functions
-# -----------------------------------------------------------------------------
+# =============================================================================
+# Logging / errors
+# =============================================================================
 
 def log(message):
     print(
@@ -77,12 +69,15 @@ def fail(message):
     )
 
 
+# =============================================================================
+# Python dependencies
+# =============================================================================
+
 def ensure_pyyaml():
-    """
-    Ensure PyYAML is available to the Python environment used by PlatformIO.
-    """
     try:
-        importlib.import_module("yaml")
+        importlib.import_module(
+            "yaml"
+        )
         return
 
     except ImportError:
@@ -110,13 +105,15 @@ def ensure_pyyaml():
 
     if result.returncode != 0:
         fail(
-            "Unable to install PyYAML. "
-            "Run 'pip install PyYAML' in the "
-            "PlatformIO Python environment."
+            "Unable to install PyYAML."
         )
 
 
-def load_yaml():
+# =============================================================================
+# YAML loading
+# =============================================================================
+
+def load_document():
     if not TELEMETRY_YAML.exists():
         fail(
             f"Missing composition file: "
@@ -132,14 +129,14 @@ def load_yaml():
             "r",
             encoding="utf-8"
         ) as stream:
+
             document = yaml.safe_load(
                 stream
             )
 
     except yaml.YAMLError as exc:
         fail(
-            f"Invalid YAML in "
-            f"{TELEMETRY_YAML}: {exc}"
+            f"Invalid YAML: {exc}"
         )
 
     if document is None:
@@ -147,40 +144,24 @@ def load_yaml():
             "telemetry.yaml is empty"
         )
 
-    if not isinstance(document, dict):
+    if not isinstance(
+        document,
+        dict
+    ):
         fail(
             "telemetry.yaml root must be a mapping"
         )
 
-    observations = document.get(
-        "observations"
-    )
-
-    if observations is None:
-        fail(
-            "telemetry.yaml must contain "
-            "an 'observations' section"
-        )
-
-    if not isinstance(observations, dict):
-        fail(
-            "'observations' must be a mapping"
-        )
-
-    return observations
+    return document
 
 
-def humanise_alias(alias):
-    """
-    Convert a composition alias into a reasonable
-    fallback UI label.
+# =============================================================================
+# General helpers
+# =============================================================================
 
-    Example:
-        current_power_production
-        -> Current Power Production
-    """
+def humanise(value):
     return (
-        alias
+        value
         .replace("_", " ")
         .strip()
         .title()
@@ -188,9 +169,6 @@ def humanise_alias(alias):
 
 
 def cpp_escape(value):
-    """
-    Escape a string for use as a C++ string literal.
-    """
     return (
         str(value)
         .replace("\\", "\\\\")
@@ -200,11 +178,161 @@ def cpp_escape(value):
     )
 
 
-# -----------------------------------------------------------------------------
-# Validation / normalisation
-# -----------------------------------------------------------------------------
+# =============================================================================
+# Observation validation
+# =============================================================================
 
-def validate_observations(observations):
+def validate_display(
+    alias,
+    definition
+):
+    display = definition.get(
+        "display"
+    )
+
+    if display is None:
+        return []
+
+    if not isinstance(
+        display,
+        dict
+    ):
+        fail(
+            f"Observation '{alias}' "
+            "display must be a mapping"
+        )
+
+    scales = display.get(
+        "scales",
+        []
+    )
+
+    if not isinstance(
+        scales,
+        list
+    ):
+        fail(
+            f"Observation '{alias}' "
+            "display.scales must be a list"
+        )
+
+    if not scales:
+        return []
+
+    previous_threshold = None
+    normalised = []
+
+    for index, scale in enumerate(
+        scales
+    ):
+
+        if not isinstance(
+            scale,
+            dict
+        ):
+            fail(
+                f"Observation '{alias}' "
+                f"display scale {index} "
+                "must be a mapping"
+            )
+
+        threshold = scale.get(
+            "threshold"
+        )
+
+        divisor = scale.get(
+            "divisor"
+        )
+
+        precision = scale.get(
+            "precision"
+        )
+
+        unit = scale.get(
+            "unit"
+        )
+
+        if not isinstance(
+            threshold,
+            (int, float)
+        ):
+            fail(
+                f"Observation '{alias}' "
+                f"display scale {index} "
+                "requires numeric threshold"
+            )
+
+        if threshold < 0:
+            fail(
+                f"Observation '{alias}' "
+                f"display scale {index} "
+                "threshold cannot be negative"
+            )
+
+        if not isinstance(
+            divisor,
+            (int, float)
+        ) or divisor <= 0:
+            fail(
+                f"Observation '{alias}' "
+                f"display scale {index} "
+                "requires positive divisor"
+            )
+
+        if not isinstance(
+            precision,
+            int
+        ) or precision < 0:
+            fail(
+                f"Observation '{alias}' "
+                f"display scale {index} "
+                "requires non-negative integer precision"
+            )
+
+        if (
+            not isinstance(unit, str)
+            or not unit.strip()
+        ):
+            fail(
+                f"Observation '{alias}' "
+                f"display scale {index} "
+                "requires non-empty unit"
+            )
+
+        if (
+            previous_threshold is not None
+            and threshold <= previous_threshold
+        ):
+            fail(
+                f"Observation '{alias}' "
+                "display thresholds must be "
+                "strictly increasing"
+            )
+
+        previous_threshold = threshold
+
+        normalised.append(
+            {
+                "threshold": float(threshold),
+                "divisor": float(divisor),
+                "precision": precision,
+                "unit": unit,
+            }
+        )
+
+    if normalised[0]["threshold"] != 0:
+        fail(
+            f"Observation '{alias}' "
+            "first display scale must have "
+            "threshold 0"
+        )
+
+    return normalised
+
+
+def validate_observations(
+    observations
+):
     normalised = []
 
     aliases = set()
@@ -213,107 +341,117 @@ def validate_observations(observations):
 
     for alias, definition in observations.items():
 
-        # ---------------------------------------------------------------------
-        # Alias
-        # ---------------------------------------------------------------------
-
-        if not isinstance(alias, str):
+        if (
+            not isinstance(alias, str)
+            or not alias.strip()
+        ):
             fail(
-                "Observation aliases must be strings"
-            )
-
-        if not alias.strip():
-            fail(
-                "Observation aliases must not be empty"
-            )
-
-        if not CPP_IDENTIFIER_RE.match(alias):
-            fail(
-                f"Observation alias '{alias}' is not "
-                "a valid C++ identifier"
+                "Observation aliases must "
+                "be non-empty strings"
             )
 
         if alias in aliases:
             fail(
-                f"Duplicate observation alias: {alias}"
+                f"Duplicate observation alias: "
+                f"{alias}"
             )
 
         aliases.add(alias)
 
-        # ---------------------------------------------------------------------
-        # Observation definition
-        # ---------------------------------------------------------------------
-
-        if not isinstance(definition, dict):
+        if not isinstance(
+            definition,
+            dict
+        ):
             fail(
-                f"Observation '{alias}' must be a mapping"
+                f"Observation '{alias}' "
+                "must be a mapping"
             )
 
         # ---------------------------------------------------------------------
         # Semantic identity
         # ---------------------------------------------------------------------
 
-        semantic_key = definition.get(
+        key = definition.get(
             "key"
         )
 
         if (
-            not isinstance(semantic_key, str)
-            or not semantic_key.strip()
+            not isinstance(key, str)
+            or not key.strip()
         ):
             fail(
-                f"Observation '{alias}' must define "
-                "a non-empty 'key'"
+                f"Observation '{alias}' "
+                "must define a non-empty key"
             )
 
-        if semantic_key in semantic_keys:
+        if key in semantic_keys:
             fail(
                 f"Duplicate semantic observation key: "
-                f"{semantic_key}"
+                f"{key}"
             )
 
-        semantic_keys.add(
-            semantic_key
-        )
+        semantic_keys.add(key)
 
         # ---------------------------------------------------------------------
-        # Type
+        # Meaning
         # ---------------------------------------------------------------------
 
         observation_type = definition.get(
             "type"
         )
 
-        if observation_type not in SUPPORTED_TYPES:
-            supported = ", ".join(
-                sorted(SUPPORTED_TYPES)
+        if (
+            not isinstance(
+                observation_type,
+                str
             )
-
+            or not observation_type.strip()
+        ):
             fail(
-                f"Observation '{alias}' has unsupported "
-                f"type '{observation_type}'. "
-                f"Supported types: {supported}"
+                f"Observation '{alias}' "
+                "must define a non-empty type"
             )
 
-        type_info = SUPPORTED_TYPES[
-            observation_type
-        ]
-
-        # ---------------------------------------------------------------------
-        # Canonical unit
-        # ---------------------------------------------------------------------
-
-        declared_unit = definition.get(
+        unit = definition.get(
             "unit"
         )
 
-        if declared_unit != type_info["unit"]:
-            fail(
-                f"Observation '{alias}' declares unit "
-                f"'{declared_unit}', but type "
-                f"'{observation_type}' requires canonical "
-                f"unit '{type_info['unit']}'"
+        if (
+            not isinstance(
+                unit,
+                str
             )
+            or not unit.strip()
+        ):
+            fail(
+                f"Observation '{alias}' "
+                "must define a non-empty unit"
+            )
+
+        # ---------------------------------------------------------------------
+        # Presentation
+        # ---------------------------------------------------------------------
+
+        label = definition.get(
+            "label"
+        )
+
+        if label is None:
+            label = humanise(alias)
+
+        if (
+            not isinstance(label, str)
+            or not label.strip()
+        ):
+            fail(
+                f"Observation '{alias}' "
+                "has an invalid label"
+            )
+
+        display_scales = validate_display(
+            alias,
+            definition
+        )
 
         # ---------------------------------------------------------------------
         # Source
@@ -323,94 +461,934 @@ def validate_observations(observations):
             "source"
         )
 
-        if not isinstance(source, dict):
+        if not isinstance(
+            source,
+            dict
+        ):
             fail(
-                f"Observation '{alias}' must define "
-                "a 'source' mapping"
+                f"Observation '{alias}' "
+                "must define a source"
             )
 
         source_type = source.get(
             "type"
         )
 
-        if source_type not in SUPPORTED_SOURCE_TYPES:
+        if source_type not in \
+            SUPPORTED_SOURCE_TYPES:
+
             supported = ", ".join(
-                sorted(SUPPORTED_SOURCE_TYPES)
+                sorted(
+                    SUPPORTED_SOURCE_TYPES
+                )
             )
 
             fail(
-                f"Observation '{alias}' has unsupported "
-                f"source type '{source_type}'. "
+                f"Observation '{alias}' "
+                f"has unsupported source type "
+                f"'{source_type}'. "
                 f"Supported sources: {supported}"
             )
 
-        mqtt_topic = source.get(
+        source_topic = source.get(
             "topic"
         )
 
         if (
-            not isinstance(mqtt_topic, str)
-            or not mqtt_topic.strip()
+            not isinstance(
+                source_topic,
+                str
+            )
+            or not source_topic.strip()
         ):
             fail(
-                f"Observation '{alias}' MQTT source "
-                "must define a non-empty 'topic'"
+                f"Observation '{alias}' "
+                "MQTT source requires a "
+                "non-empty topic"
             )
 
-        if mqtt_topic in mqtt_topics:
+        if source_topic in mqtt_topics:
             fail(
-                f"Duplicate MQTT topic: {mqtt_topic}"
+                f"Duplicate MQTT topic: "
+                f"{source_topic}"
             )
 
         mqtt_topics.add(
-            mqtt_topic
+            source_topic
         )
-
-        # ---------------------------------------------------------------------
-        # Presentation metadata
-        # ---------------------------------------------------------------------
-
-        label = definition.get(
-            "label"
-        )
-
-        if label is None:
-            label = humanise_alias(
-                alias
-            )
-
-        if (
-            not isinstance(label, str)
-            or not label.strip()
-        ):
-            fail(
-                f"Observation '{alias}' has "
-                "an invalid 'label'"
-            )
-
-        # ---------------------------------------------------------------------
-        # Normalised representation
-        # ---------------------------------------------------------------------
 
         normalised.append(
             {
                 "alias": alias,
-                "key": semantic_key,
+                "key": key,
                 "type": observation_type,
-                "cpp_type": type_info["cpp_type"],
-                "unit": type_info["unit"],
+                "unit": unit,
                 "label": label,
-                "source_type": source_type,
-                "topic": mqtt_topic,
+                "displayScales": display_scales,
+                "sourceType": source_type,
+                "sourceTopic": source_topic,
+            }
+        )
+
+    if not normalised:
+        fail(
+            "No observations were declared"
+        )
+
+    return normalised, aliases
+
+
+# =============================================================================
+# Screen validation
+# =============================================================================
+
+def validate_screens(
+    screens,
+    observation_aliases
+):
+    if screens is None:
+        return []
+
+    if not isinstance(
+        screens,
+        dict
+    ):
+        fail(
+            "'screens' must be a mapping"
+        )
+
+    normalised = []
+
+    for screen_id, definition in screens.items():
+
+        if (
+            not isinstance(
+                screen_id,
+                str
+            )
+            or not screen_id.strip()
+        ):
+            fail(
+                "Screen IDs must be "
+                "non-empty strings"
+            )
+
+        if not isinstance(
+            definition,
+            dict
+        ):
+            fail(
+                f"Screen '{screen_id}' "
+                "must be a mapping"
+            )
+
+        title = definition.get(
+            "title"
+        )
+
+        if title is None:
+            title = humanise(
+                screen_id
+            )
+
+        if (
+            not isinstance(title, str)
+            or not title.strip()
+        ):
+            fail(
+                f"Screen '{screen_id}' "
+                "has an invalid title"
+            )
+
+        layout = definition.get(
+            "layout"
+        )
+
+        if not isinstance(
+            layout,
+            dict
+        ):
+            fail(
+                f"Screen '{screen_id}' "
+                "must define a layout"
+            )
+
+        rows = layout.get(
+            "rows"
+        )
+
+        if not isinstance(
+            rows,
+            list
+        ) or not rows:
+            fail(
+                f"Screen '{screen_id}' "
+                "layout.rows must be a "
+                "non-empty list"
+            )
+
+        normalised_rows = []
+        max_columns = 0
+
+        for row_index, row in enumerate(
+            rows
+        ):
+
+            if not isinstance(
+                row,
+                dict
+            ):
+                fail(
+                    f"Screen '{screen_id}' "
+                    f"row {row_index} "
+                    "must be a mapping"
+                )
+
+            row_title = row.get(
+                "title"
+            )
+
+            if (
+                not isinstance(
+                    row_title,
+                    str
+                )
+                or not row_title.strip()
+            ):
+                fail(
+                    f"Screen '{screen_id}' "
+                    f"row {row_index} "
+                    "requires a title"
+                )
+
+            items = row.get(
+                "items"
+            )
+
+            if not isinstance(
+                items,
+                list
+            ) or not items:
+                fail(
+                    f"Screen '{screen_id}' "
+                    f"row '{row_title}' "
+                    "requires at least one item"
+                )
+
+            for alias in items:
+                if (
+                    not isinstance(alias, str)
+                    or not alias.strip()
+                ):
+                    fail(
+                        f"Screen '{screen_id}' "
+                        f"row '{row_title}' "
+                        "contains an invalid item"
+                    )
+
+                if alias not in \
+                    observation_aliases:
+
+                    fail(
+                        f"Screen '{screen_id}' "
+                        f"references unknown "
+                        f"observation '{alias}'"
+                    )
+
+            max_columns = max(
+                max_columns,
+                len(items)
+            )
+
+            normalised_rows.append(
+                {
+                    "title": row_title,
+                    "items": items,
+                }
+            )
+
+        normalised.append(
+            {
+                "id": screen_id,
+                "title": title,
+                "columns": max_columns,
+                "rows": normalised_rows,
             }
         )
 
     return normalised
 
 
-# -----------------------------------------------------------------------------
-# Generated file helpers
-# -----------------------------------------------------------------------------
+# =============================================================================
+# Generated header
+# =============================================================================
+
+def generate_composition_header():
+
+    return """\
+#pragma once
+
+#include <stdint.h>
+
+#include "data/ObservationHandle.h"
+
+namespace TelemetryComposition
+{
+
+struct ObservationDisplayScale
+{
+    float threshold;
+    float divisor;
+    uint8_t precision;
+    const char* unit;
+};
+
+
+struct ObservationDefinition
+{
+    const char* alias;
+    const char* key;
+    const char* type;
+    const char* unit;
+    const char* label;
+
+    const char* sourceType;
+    const char* sourceTopic;
+
+    ObservationHandle handle;
+
+    const ObservationDisplayScale* displayScales;
+    uint8_t displayScaleCount;
+};
+
+
+struct ScreenRow
+{
+    const char* title;
+    const char* const* items;
+    uint8_t itemCount;
+};
+
+
+struct ScreenDefinition
+{
+    const char* id;
+    const char* title;
+
+    const ScreenRow* rows;
+    uint8_t rowCount;
+    uint8_t columns;
+};
+
+
+bool registerObservations();
+
+const ObservationDefinition* observations();
+uint8_t observationCount();
+
+const ObservationDefinition*
+findObservation(
+    const char* alias);
+
+const ObservationDefinition*
+findObservationBySource(
+    const char* sourceType,
+    const char* source);
+
+const ScreenDefinition* screens();
+uint8_t screenCount();
+
+const ScreenDefinition*
+findScreen(
+    const char* id);
+
+}
+"""
+
+
+# =============================================================================
+# Generated implementation
+# =============================================================================
+
+def generate_composition_cpp(
+    observations,
+    screens
+):
+
+    lines = [
+        '#include "TelemetryComposition.h"',
+        "",
+        '#include <cstring>',
+        "",
+        '#include "data/ObservationKey.h"',
+        '#include "data/ObservationRegistry.h"',
+        '#include "models/SensorRepository.h"',
+        '#include "models/SensorTile.h"',
+        "",
+        "namespace",
+        "{",
+    ]
+
+    # -------------------------------------------------------------------------
+    # Display scales
+    # -------------------------------------------------------------------------
+
+    for index, observation in enumerate(
+        observations
+    ):
+        scales = observation[
+            "displayScales"
+        ]
+
+        if not scales:
+            continue
+
+        lines.append(
+            f"    constexpr "
+            f"TelemetryComposition::"
+            f"ObservationDisplayScale "
+            f"displayScales_{index}[] ="
+        )
+
+        lines.append(
+            "    {"
+        )
+
+        for scale in scales:
+            lines.append(
+                "        {"
+                f"{scale['threshold']}f, "
+                f"{scale['divisor']}f, "
+                f"{scale['precision']}, "
+                f'"{cpp_escape(scale["unit"])}"'
+                "},"
+            )
+
+        lines.append(
+            "    };"
+        )
+
+        lines.append("")
+
+    # -------------------------------------------------------------------------
+    # Observation definitions
+    # -------------------------------------------------------------------------
+
+    lines.append(
+        "    TelemetryComposition::"
+        "ObservationDefinition "
+        "observationDefinitions[] ="
+    )
+
+    lines.append(
+        "    {"
+    )
+
+    for index, observation in enumerate(
+        observations
+    ):
+        alias = cpp_escape(
+            observation["alias"]
+        )
+
+        key = cpp_escape(
+            observation["key"]
+        )
+
+        observation_type = cpp_escape(
+            observation["type"]
+        )
+
+        unit = cpp_escape(
+            observation["unit"]
+        )
+
+        label = cpp_escape(
+            observation["label"]
+        )
+
+        source_type = cpp_escape(
+            observation["sourceType"]
+        )
+
+        source_topic = cpp_escape(
+            observation["sourceTopic"]
+        )
+
+        scales = observation[
+            "displayScales"
+        ]
+
+        if scales:
+            scale_pointer = (
+                f"displayScales_{index}"
+            )
+
+            scale_count = str(
+                len(scales)
+            )
+
+        else:
+            scale_pointer = "nullptr"
+            scale_count = "0"
+
+        lines.append(
+            "        {"
+            f'"{alias}", '
+            f'"{key}", '
+            f'"{observation_type}", '
+            f'"{unit}", '
+            f'"{label}", '
+            f'"{source_type}", '
+            f'"{source_topic}", '
+            "ObservationHandle{}, "
+            f"{scale_pointer}, "
+            f"{scale_count}"
+            "},"
+        )
+
+    lines.extend(
+        [
+            "    };",
+            "",
+        ]
+    )
+
+    # -------------------------------------------------------------------------
+    # Screen item arrays
+    # -------------------------------------------------------------------------
+
+    for screen_index, screen in enumerate(
+        screens
+    ):
+
+        for row_index, row in enumerate(
+            screen["rows"]
+        ):
+
+            lines.append(
+                f"    constexpr const char* "
+                f"screen_{screen_index}_row_"
+                f"{row_index}_items[] ="
+            )
+
+            lines.append(
+                "    {"
+            )
+
+            for alias in row["items"]:
+                lines.append(
+                    f'        "{cpp_escape(alias)}",'
+                )
+
+            lines.append(
+                "    };"
+            )
+
+            lines.append("")
+
+        lines.append(
+            f"    constexpr "
+            f"TelemetryComposition::ScreenRow "
+            f"screen_{screen_index}_rows[] ="
+        )
+
+        lines.append(
+            "    {"
+        )
+
+        for row_index, row in enumerate(
+            screen["rows"]
+        ):
+            title = cpp_escape(
+                row["title"]
+            )
+
+            count = len(
+                row["items"]
+            )
+
+            lines.append(
+                "        {"
+                f'"{title}", '
+                f"screen_{screen_index}_row_"
+                f"{row_index}_items, "
+                f"{count}"
+                "},"
+            )
+
+        lines.append(
+            "    };"
+        )
+
+        lines.append("")
+
+    # -------------------------------------------------------------------------
+    # Screen definitions
+    # -------------------------------------------------------------------------
+
+    if screens:
+
+        lines.append(
+            "    constexpr "
+            "TelemetryComposition::"
+            "ScreenDefinition "
+            "screenDefinitions[] ="
+        )
+
+        lines.append(
+            "    {"
+        )
+
+        for index, screen in enumerate(
+            screens
+        ):
+            screen_id = cpp_escape(
+                screen["id"]
+            )
+
+            title = cpp_escape(
+                screen["title"]
+            )
+
+            row_count = len(
+                screen["rows"]
+            )
+
+            columns = screen[
+                "columns"
+            ]
+
+            lines.append(
+                "        {"
+                f'"{screen_id}", '
+                f'"{title}", '
+                f"screen_{index}_rows, "
+                f"{row_count}, "
+                f"{columns}"
+                "},"
+            )
+
+        lines.extend(
+            [
+                "    };",
+                "",
+            ]
+        )
+
+    # -------------------------------------------------------------------------
+    # Namespace state
+    # -------------------------------------------------------------------------
+
+    lines.extend(
+        [
+            "}",
+            "",
+            "namespace TelemetryComposition",
+            "{",
+            "",
+        ]
+    )
+
+    # -------------------------------------------------------------------------
+    # Observation registration
+    # -------------------------------------------------------------------------
+
+    lines.extend(
+        [
+            "bool registerObservations()",
+            "{",
+            "",
+            "    for (",
+            "        auto& observation : "
+            "observationDefinitions",
+            "    )",
+            "    {",
+            "",
+            "        const ObservationKey key{",
+            "            observation.key",
+            "        };",
+            "",
+            "        observation.handle =",
+            "            ObservationRegistry::"
+            "registerObservation(key);",
+            "",
+            "        if (!observation.handle.isValid())",
+            "        {",
+            "            return false;",
+            "        }",
+            "",
+            "        if (!SensorRepository::"
+            "registerObservation(",
+            "                observation.handle,",
+            "                SensorTile{",
+            "                    observation.label,",
+            "                    observation.unit,",
+            "                    0.0f,",
+            "                    0.0f,",
+            "                    0.0f,",
+            "                    TREND_NONE,",
+            "                    false",
+            "                    observation.displayScales",
+            "                    observation.displayScaleCount"
+            "                }))",
+            "        {",
+            "            return false;",
+            "        }",
+            "    }",
+            "",
+            "    return true;",
+            "}",
+            "",
+        ]
+    )
+
+    # -------------------------------------------------------------------------
+    # Observation access
+    # -------------------------------------------------------------------------
+
+    lines.extend(
+        [
+            "const ObservationDefinition* "
+            "observations()",
+            "{",
+            "    return observationDefinitions;",
+            "}",
+            "",
+            "uint8_t observationCount()",
+            "{",
+            "    return static_cast<uint8_t>(",
+            "        sizeof(observationDefinitions) /",
+            "        sizeof(observationDefinitions[0])",
+            "    );",
+            "}",
+            "",
+            "const ObservationDefinition* "
+            "findObservation(",
+            "    const char* alias)",
+            "{",
+            "    if (!alias)",
+            "    {",
+            "        return nullptr;",
+            "    }",
+            "",
+            "    for (",
+            "        const auto& observation : "
+            "observationDefinitions",
+            "    )",
+            "    {",
+            "        if (std::strcmp(",
+            "                observation.alias,",
+            "                alias) == 0)",
+            "        {",
+            "            return &observation;",
+            "        }",
+            "    }",
+            "",
+            "    return nullptr;",
+            "}",
+            "",
+            "const ObservationDefinition* "
+            "findObservationBySource(",
+            "    const char* sourceType,",
+            "    const char* source)",
+            "{",
+            "    if (!sourceType || !source)",
+            "    {",
+            "        return nullptr;",
+            "    }",
+            "",
+            "    for (",
+            "        const auto& observation : "
+            "observationDefinitions",
+            "    )",
+            "    {",
+            "        if (std::strcmp(",
+            "                observation.sourceType,",
+            "                sourceType) == 0 &&",
+            "            std::strcmp(",
+            "                observation.sourceTopic,",
+            "                source) == 0)",
+            "        {",
+            "            return &observation;",
+            "        }",
+            "    }",
+            "",
+            "    return nullptr;",
+            "}",
+            "",
+        ]
+    )
+
+    # -------------------------------------------------------------------------
+    # Screen access
+    # -------------------------------------------------------------------------
+
+    if screens:
+        lines.extend(
+            [
+                "const ScreenDefinition* screens()",
+                "{",
+                "    return screenDefinitions;",
+                "}",
+                "",
+                "uint8_t screenCount()",
+                "{",
+                "    return static_cast<uint8_t>(",
+                "        sizeof(screenDefinitions) /",
+                "        sizeof(screenDefinitions[0])",
+                "    );",
+                "}",
+                "",
+                "const ScreenDefinition* "
+                "findScreen(",
+                "    const char* id)",
+                "{",
+                "    if (!id)",
+                "    {",
+                "        return nullptr;",
+                "    }",
+                "",
+                "    for (",
+                "        const auto& screen : "
+                "screenDefinitions",
+                "    )",
+                "    {",
+                "        if (std::strcmp(",
+                "                screen.id,",
+                "                id) == 0)",
+                "        {",
+                "            return &screen;",
+                "        }",
+                "    }",
+                "",
+                "    return nullptr;",
+                "}",
+                "",
+            ]
+        )
+
+    else:
+        lines.extend(
+            [
+                "const ScreenDefinition* screens()",
+                "{",
+                "    return nullptr;",
+                "}",
+                "",
+                "uint8_t screenCount()",
+                "{",
+                "    return 0;",
+                "}",
+                "",
+                "const ScreenDefinition* "
+                "findScreen(",
+                "    const char*)",
+                "{",
+                "    return nullptr;",
+                "}",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
+            "}",
+            "",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+# =============================================================================
+# Remove obsolete generated files
+# =============================================================================
+
+def remove_stale_outputs():
+    stale = [
+        GENERATED_DIR /
+        "TelemetryMqttMappings.h",
+
+        GENERATED_DIR /
+        "TelemetryMqttMappings.cpp",
+    ]
+
+    for path in stale:
+        if path.exists():
+            path.unlink()
+
+            log(
+                f"Removed stale generated file "
+                f"{path.name}"
+            )
+
+
+# =============================================================================
+# Compose
+# =============================================================================
+
+def compose():
+
+    document = load_document()
+
+    observations_document = (
+        document.get(
+            "observations",
+            {}
+        )
+    )
+
+    screens_document = (
+        document.get(
+            "screens",
+            {}
+        )
+    )
+
+    observations, aliases = (
+        validate_observations(
+            observations_document
+        )
+    )
+
+    screens = validate_screens(
+        screens_document,
+        aliases
+    )
+
+    GENERATED_DIR.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    remove_stale_outputs()
+
+    write_file(
+        GENERATED_DIR /
+        "TelemetryComposition.h",
+        generate_composition_header()
+    )
+
+    write_file(
+        GENERATED_DIR /
+        "TelemetryComposition.cpp",
+        generate_composition_cpp(
+            observations,
+            screens
+        )
+    )
+
+    log(
+        f"Composition complete: "
+        f"{len(observations)} observation(s), "
+        f"{len(screens)} screen(s)"
+    )
+
+
+# =============================================================================
+# File writing
+# =============================================================================
 
 def write_file(
     path,
@@ -432,233 +1410,16 @@ def write_file(
     )
 
 
-def generate_composition_header():
-    return """\
-#pragma once
-
-#include "data/ObservationHandle.h"
-
-namespace TelemetryComposition
-{
-    struct ObservationHandles
-    {
-        // Generated from telemetry.yaml observation aliases.
-        ObservationHandle current_power_production;
-        ObservationHandle current_power_consumption;
-        ObservationHandle energy_production_today;
-        ObservationHandle energy_consumption_today;
-        ObservationHandle energy_production_lifetime;
-        ObservationHandle energy_consumption_lifetime;
-    };
-
-    bool registerObservations();
-
-    const ObservationHandles& observations();
-}
-"""
-
-def generate_composition_cpp(observations):
-    lines = [
-        '#include "TelemetryComposition.h"',
-        "",
-        '#include "data/ObservationKey.h"',
-        '#include "data/ObservationRegistry.h"',
-        '#include "data/ObservationHandle.h"',
-        '#include "models/SensorRepository.h"',
-        '#include "models/SensorTile.h"',
-        "",
-        "namespace",
-        "{",
-        "    TelemetryComposition::ObservationHandles s_observations;",
-        "}",
-        "",
-        "namespace TelemetryComposition",
-        "{",
-        "",
-        "bool registerObservations()",
-        "{",
-    ]
-
-    for observation in observations:
-        alias = observation["alias"]
-        key = cpp_escape(observation["key"])
-        label = cpp_escape(observation["label"])
-        unit = cpp_escape(observation["unit"])
-        cpp_type = observation["cpp_type"]
-
-        lines.extend(
-            [
-                f'    constexpr ObservationKey key_{alias}{{"{key}"}};',
-                "",
-                f'    const ObservationHandle handle_{alias} =',
-                "        ObservationRegistry::registerObservation(",
-                f"            key_{alias});",
-                "",
-                f"    if (!handle_{alias}.isValid())",
-                "    {",
-                "        return false;",
-                "    }",
-                "",
-                "    if (!SensorRepository::registerObservation(",
-                f"            handle_{alias},",
-                "            SensorTile{",
-                f'                "{label}",',
-                f'                "{unit}",',
-                f"                SensorType::{cpp_type},",
-                "                0.0f,",
-                "                0.0f,",
-                "                0.0f,",
-                "                TREND_NONE,",
-                "                false",
-                "            }))",
-                "    {",
-                "        return false;",
-                "    }",
-                "",
-                f"    s_observations.{alias} = handle_{alias};",
-                "",
-            ]
-        )
-
-    lines.extend(
-        [
-            "    return true;",
-            "}",
-            "",
-            "const ObservationHandles& observations()",
-            "{",
-            "    return s_observations;",
-            "}",
-            "",
-            "}",
-            "",
-        ]
-    )
-
-    return "\n".join(lines)
-
-
-def generate_mqtt_mapping_header():
-    return """\
-#pragma once
-
-#include "data/ObservationKey.h"
-
-struct TelemetryMqttMapping
-{
-    const char* topic;
-    ObservationKey observation;
-};
-
-extern const TelemetryMqttMapping telemetryMqttMappings[];
-extern const unsigned int telemetryMqttMappingCount;
-"""
-
-
-def generate_mqtt_mapping_cpp(
-    observations
-):
-    lines = [
-        '#include "TelemetryMqttMappings.h"',
-        "",
-        "const TelemetryMqttMapping telemetryMqttMappings[] =",
-        "{",
-    ]
-
-    for observation in observations:
-        topic = cpp_escape(
-            observation["topic"]
-        )
-        key = cpp_escape(
-            observation["key"]
-        )
-
-        lines.append(
-            f'    {{"{topic}", '
-            f'ObservationKey{{"{key}"}}}},'
-        )
-
-    lines.extend(
-        [
-            "};",
-            "",
-            "const unsigned int telemetryMqttMappingCount =",
-            "    sizeof(telemetryMqttMappings) /",
-            "    sizeof(telemetryMqttMappings[0]);",
-            "",
-        ]
-    )
-
-    return "\n".join(
-        lines
-    )
-
-
-# -----------------------------------------------------------------------------
-# Compose
-# -----------------------------------------------------------------------------
-
-def compose():
-    log(
-        f"Reading {TELEMETRY_YAML}"
-    )
-
-    observations = load_yaml()
-
-    normalised = validate_observations(
-        observations
-    )
-
-    if not normalised:
-        fail(
-            "No observations were declared"
-        )
-
-    GENERATED_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    write_file(
-        GENERATED_DIR / "TelemetryComposition.h",
-        generate_composition_header()
-    )
-
-    write_file(
-        GENERATED_DIR / "TelemetryComposition.cpp",
-        generate_composition_cpp(
-            normalised
-        )
-    )
-
-    write_file(
-        GENERATED_DIR / "TelemetryMqttMappings.h",
-        generate_mqtt_mapping_header()
-    )
-
-    write_file(
-        GENERATED_DIR / "TelemetryMqttMappings.cpp",
-        generate_mqtt_mapping_cpp(
-            normalised
-        )
-    )
-
-    log(
-        f"Composition complete: "
-        f"{len(normalised)} observation(s)"
-    )
-
-
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Execute
-# -----------------------------------------------------------------------------
+# =============================================================================
 
 compose()
 
 
-# -----------------------------------------------------------------------------
-# Add generated sources and headers to this build
-# -----------------------------------------------------------------------------
+# =============================================================================
+# Add generated sources / headers to PlatformIO
+# =============================================================================
 
 env.Append(
     CPPPATH=[

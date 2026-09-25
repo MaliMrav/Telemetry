@@ -4,53 +4,179 @@ observations:
     key: sensor.envoy_current_power_production
     type: power
     unit: W
+    label: Production
+
+    display:
+      scales:
+        - threshold: 0
+          unit: W
+          divisor: 1
+          precision: 1
+
+        - threshold: 1000
+          unit: kW
+          divisor: 1000
+          precision: 1
 
     source:
       type: mqtt
       topic: ha/envoy/current_power_production
 
+
   current_power_consumption:
     key: sensor.envoy_current_power_consumption
     type: power
     unit: W
+    label: Consumption
+
+    display:
+      scales:
+        - threshold: 0
+          unit: W
+          divisor: 1
+          precision: 1
+
+        - threshold: 1000
+          unit: kW
+          divisor: 1000
+          precision: 1
 
     source:
       type: mqtt
       topic: ha/envoy/current_power_consumption
 
+
   energy_production_today:
     key: sensor.envoy_energy_production_today
     type: energy
     unit: Wh
+    label: Production
+
+    display:
+      scales:
+        - threshold: 0
+          unit: Wh
+          divisor: 1
+          precision: 0
+
+        - threshold: 1000
+          unit: kWh
+          divisor: 1000
+          precision: 1
+
+        - threshold: 1000000
+          unit: MWh
+          divisor: 1000000
+          precision: 1
 
     source:
       type: mqtt
       topic: ha/envoy/energy_production_today
 
+
   energy_consumption_today:
     key: sensor.envoy_energy_consumption_today
     type: energy
     unit: Wh
+    label: Consumption
+
+    display:
+      scales:
+        - threshold: 0
+          unit: Wh
+          divisor: 1
+          precision: 0
+
+        - threshold: 1000
+          unit: kWh
+          divisor: 1000
+          precision: 1
+
+        - threshold: 1000000
+          unit: MWh
+          divisor: 1000000
+          precision: 1
 
     source:
       type: mqtt
       topic: ha/envoy/energy_consumption_today
 
+
   energy_production_lifetime:
     key: sensor.envoy_lifetime_energy_production
     type: energy
     unit: Wh
+    label: Production
+
+    display:
+      scales:
+        - threshold: 0
+          unit: Wh
+          divisor: 1
+          precision: 0
+
+        - threshold: 1000
+          unit: kWh
+          divisor: 1000
+          precision: 1
+
+        - threshold: 1000000
+          unit: MWh
+          divisor: 1000000
+          precision: 1
 
     source:
       type: mqtt
       topic: ha/envoy/lifetime_energy_production
 
+
   energy_consumption_lifetime:
     key: sensor.envoy_lifetime_energy_consumption
     type: energy
     unit: Wh
+    label: Consumption
+
+    display:
+      scales:
+        - threshold: 0
+          unit: Wh
+          divisor: 1
+          precision: 0
+
+        - threshold: 1000
+          unit: kWh
+          divisor: 1000
+          precision: 1
+
+        - threshold: 1000000
+          unit: MWh
+          divisor: 1000000
+          precision: 1
 
     source:
       type: mqtt
       topic: ha/envoy/lifetime_energy_consumption
 
+
+screens:
+
+  energy_status:
+    title: Energy Status
+
+    layout:
+      rows:
+
+        - title: Current
+          items:
+            - current_power_production
+            - current_power_consumption
+
+        - title: Today
+          items:
+            - energy_production_today
+            - energy_consumption_today
+
+        - title: Lifetime
+          items:
+            - energy_production_lifetime
+            - energy_consumption_lifetime
