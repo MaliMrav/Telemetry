@@ -12,6 +12,7 @@ These are not simply lists of completed features. Each sprint represents a stage
 - [Sprint Delta — Interaction Architecture](Sprint_Delta.md)
 - [Sprint Epsilon — Screen Navigation](Sprint_Epsilon.md)
 - [Sprint Zeta — Domain Data and Source Architecture](Sprint_Zeta.md)
+- [Sprint Eta — Declarative Application Composition](Sprint_Eta.md)
 
 ## The Roadmap as a Breadcrumb Trail
 
@@ -27,6 +28,8 @@ Interaction architecture
 Screen navigation
     ↓
 Domain data + source architecture
+    ↓
+Declarative application composition
 ```
 
 The roadmap is a record of architectural discovery.

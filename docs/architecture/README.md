@@ -15,6 +15,7 @@ The architecture then evolved in response.
 5. [Who Owns Navigation?](005-who-owns-navigation.md)
 6. [The Cost of Abstraction](006-the-cost-of-abstraction.md)
 7. [Designing for Observability](007-designing-for-observability.md)
+8. [Declarative Application Composition](008-declarative-application-composition.md)
 
 ## How to Read These Documents
 
@@ -30,6 +31,8 @@ Architectural decision
 New capability
    ↓
 New pressure
+   ↓
+Declarative composition
 ```
 
 Architecture is not a collection of disconnected diagrams.

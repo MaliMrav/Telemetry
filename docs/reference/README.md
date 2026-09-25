@@ -11,6 +11,7 @@ Unlike the architectural journey, these documents are not primarily chronologica
 - [Calibration Rules](CALIBRATION_RULES.md)
 - [Touch Profiles](TOUCH_PROFILES.md)
 - [Platform Profiles](PLATFORM_PROFILES.md)
+- [Telemetry Composition](TELEMETRY_COMPOSITION.md)
 
 ## Architecture vs Reference
 

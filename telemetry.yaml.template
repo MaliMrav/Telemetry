@@ -1,0 +1,252 @@
+# =============================================================================
+# Telemetry Application Composition
+# =============================================================================
+#
+# This file is the application's declarative source of truth.
+#
+# The build-time composer reads this file and generates the runtime structures
+# required by the Telemetry framework.
+#
+# Authoring workflow:
+#
+#   1. Declare the observations the application needs.
+#   2. Declare the Screens that compose those observations.
+#   3. Build.
+#
+# Do not edit generated files under .pio/build/.
+#
+# =============================================================================
+
+
+# =============================================================================
+# OBSERVATIONS
+# =============================================================================
+#
+# Each observation declares:
+#
+#   alias   - local composition handle used by Screens
+#   key     - stable semantic identity
+#   type    - application-defined semantic type string
+#   unit    - canonical unit of the observation
+#   label   - presentation label (optional; alias is humanised if omitted)
+#   display - optional generic display policy
+#   source  - mechanism that currently provides the observation
+#
+# The alias is NOT a storage index.
+# Do not invent numeric IDs.
+#
+# Keep the source with the observation. There is intentionally no separate
+# top-level source mapping table.
+#
+# =============================================================================
+
+observations:
+
+  # ---------------------------------------------------------------------------
+  # Example: current power observation
+  # ---------------------------------------------------------------------------
+
+  current_power_production:
+    key: sensor.example_current_power_production
+    type: power
+    unit: W
+    label: Production
+
+    # Display policy is generic metadata.
+    # The composer does not decide what these scales mean.
+    display:
+      scales:
+        - threshold: 0
+          unit: W
+          divisor: 1
+          precision: 1
+
+        - threshold: 1000
+          unit: kW
+          divisor: 1000
+          precision: 1
+
+    # Source mechanism belongs to the observation.
+    source:
+      type: mqtt
+      topic: ha/example/current_power_production
+
+
+  # ---------------------------------------------------------------------------
+  # Example: energy observation
+  # ---------------------------------------------------------------------------
+
+  energy_production_today:
+    key: sensor.example_energy_production_today
+    type: energy
+    unit: Wh
+    label: Production
+
+    display:
+      scales:
+        - threshold: 0
+          unit: Wh
+          divisor: 1
+          precision: 0
+
+        - threshold: 1000
+          unit: kWh
+          divisor: 1000
+          precision: 1
+
+        - threshold: 1000000
+          unit: MWh
+          divisor: 1000000
+          precision: 1
+
+    source:
+      type: mqtt
+      topic: ha/example/energy_production_today
+
+
+# =============================================================================
+# SCREENS
+# =============================================================================
+#
+# A Screen declares composition, not implementation.
+#
+#   id       - stable composition identifier
+#   title    - human-readable Screen title
+#   layout   - presentation arrangement
+#   rows     - ordered rows in the layout
+#   items    - observation aliases declared above
+#
+# Every item must reference an observation alias that exists in the
+# observations section.
+#
+# A Screen should not contain:
+#
+#   - semantic ObservationKeys
+#   - MQTT topics
+#   - repository indices
+#   - numeric sensor IDs
+#   - SensorType values
+#   - display driver code
+#
+# Those belong elsewhere in the architecture.
+#
+# =============================================================================
+
+screens:
+
+  example_screen:
+    title: Example Screen
+
+    layout:
+      rows:
+
+        - title: Current
+          items:
+            - current_power_production
+
+        - title: Today
+          items:
+            - energy_production_today
+
+
+# =============================================================================
+# HOW TO CREATE A NEW SCREEN
+# =============================================================================
+#
+# Step 1 — Declare every observation the Screen needs.
+#
+# Example:
+#
+#   room_temperature:
+#     key: sensor.room_temperature
+#     type: temperature
+#     unit: "°C"
+#     source:
+#       type: mqtt
+#       topic: ha/room/temperature
+#
+#
+# Step 2 — Give the Screen a composition ID and title.
+#
+# Example:
+#
+#   room_status:
+#     title: Room Status
+#
+#
+# Step 3 — Add rows and reference the observation aliases.
+#
+# Example:
+#
+#   layout:
+#     rows:
+#       - title: Room
+#         items:
+#           - room_temperature
+#
+#
+# Step 4 — Build.
+#
+# The composer validates the declarations and generates the runtime
+# composition model.
+#
+# Do not manually edit generated C++.
+#
+# =============================================================================
+# DESIGN RULES
+# =============================================================================
+#
+# 1. Describe meaning, not storage.
+#
+#    Good:
+#      key: sensor.room_temperature
+#
+#    Not part of the composition model:
+#      id: 7
+#
+#
+# 2. Keep identity semantic.
+#
+#    The key should describe what the observation means.
+#
+#
+# 3. Keep source details with the observation.
+#
+#
+# 4. Keep units canonical.
+#
+#    The observation's unit is the canonical runtime unit.
+#    Display scales may present that value differently.
+#
+#
+# 5. Treat display scales as presentation metadata.
+#
+#    The YAML declares the policy; the runtime applies it generically.
+#
+#
+# 6. Screens reference aliases, not semantic keys.
+#
+#    This keeps composition readable and prevents Screens from becoming
+#    coupled to the identity mechanism.
+#
+#
+# 7. Do not encode domain enums in the composition file.
+#
+#    The type field is an opaque semantic string at the composition boundary.
+#
+#
+# 8. Add knowledge once.
+#
+#    Do not duplicate an observation definition in several files because more
+#    than one Screen uses it.
+#
+#
+# 9. Generated files are disposable.
+#
+#    The source of truth is this file.
+#
+#
+# 10. When the YAML cannot express something, ask whether the missing concept
+#     belongs in the architecture before adding a special-case implementation.
+#
+# =============================================================================
