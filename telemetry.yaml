@@ -103,7 +103,7 @@ observations:
 
 
   battery_charge_percentage:
-    key: sensor.battery_charge_percentage
+    key: sensor.alphaess_instantaneous_battery_soc
     type: percentage
     unit: "%"
     label: Charge
@@ -121,7 +121,7 @@ observations:
 
 
   battery_power:
-    key: sensor.battery_power
+    key: sensor.alphaess_instantaneous_battery_i_o
     type: power
     unit: W
     label: Power
