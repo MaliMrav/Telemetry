@@ -2,6 +2,13 @@
 
 #include <stdint.h>
 
+enum class SensorDisplayIndicator : uint8_t
+{
+    NONE,
+    SIGNED_FLOW
+};
+
+
 struct SensorDisplayScale
 {
     float threshold;

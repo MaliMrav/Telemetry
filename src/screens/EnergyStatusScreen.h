@@ -1,16 +1,16 @@
 #pragma once
 
-// EnergyStatusScreen displays six energy observations:
+// EnergyStatusScreen renders the application ScreenDefinition named
+// "energy_status".
 //
-//                         Production       Consumption
+// The Screen layout and observation membership come from telemetry.yaml.
+// EnergyStatusScreen therefore does not maintain its own list of observation
+// aliases, row labels, or column labels.
 //
-// Current                     W                W
-// Today                       Wh               Wh
-// Lifetime                    Wh               Wh
-//
-// The observations are supplied by the build-time Telemetry composition.
-// EnergyStatusScreen knows only the generated composition aliases and the
-// SensorRepository runtime model.
+// It consumes only:
+//   - generated ScreenDefinition / ObservationDefinition metadata
+//   - SensorRepository runtime values
+//   - generic SensorTile presentation metadata
 //
 // It has no knowledge of:
 //   - MQTT
@@ -30,7 +30,8 @@
 #include "../display/DisplayManager.h"
 #include "../ui/Screen.h"
 #include "../input/InputEvent.h"
-#include "../data/ObservationHandle.h"
+
+#include "TelemetryComposition.h"
 
 class EnergyStatusScreen : public Screen
 {
@@ -55,14 +56,8 @@ private:
 
     bool use12HourClock_ = false;
 
-    ObservationHandle currentProductionHandle_;
-    ObservationHandle currentConsumptionHandle_;
-
-    ObservationHandle todayProductionHandle_;
-    ObservationHandle todayConsumptionHandle_;
-
-    ObservationHandle lifetimeProductionHandle_;
-    ObservationHandle lifetimeConsumptionHandle_;
+    const TelemetryComposition::ScreenDefinition* screen_ =
+        nullptr;
 
     bool isClockArea(
         const InputPosition& position) const;
@@ -77,11 +72,16 @@ private:
         int w,
         int h,
         const char* rowLabel,
-        const char* columnLabel,
-        ObservationHandle handle);
+        const TelemetryComposition::ObservationDefinition* observation);
+
+    void drawFlowArrow(
+        int x,
+        int y,
+        bool upward);
 
     int8_t getWifiQuality();
 
     String formatValue(
-        const SensorTile& tile) const;
+        const SensorTile& tile,
+        float value) const;
 };

@@ -1,5 +1,6 @@
 from pathlib import Path
 import importlib
+import re
 import subprocess
 
 Import("env")
@@ -39,19 +40,27 @@ GENERATED_BUILD_DIR = (
 
 
 # =============================================================================
-# Supported Telemetry capabilities
+# Supported capabilities
 # =============================================================================
 #
-# The composer knows capabilities, not application domains.
+# The composer knows framework-level capabilities, not application domains.
 #
-# MQTT is currently the only transport/source type translated into runtime
-# source metadata. Observation types themselves remain opaque strings supplied
-# by telemetry.yaml.
+# Observation types and semantic keys remain opaque values supplied by
+# telemetry.yaml. Presentation indicators are framework presentation metadata,
+# not domain semantics.
 #
 
 SUPPORTED_SOURCE_TYPES = {
     "mqtt",
 }
+
+SUPPORTED_DISPLAY_INDICATORS = {
+    "signed_flow",
+}
+
+CPP_IDENTIFIER_RE = re.compile(
+    r"^[A-Za-z_][A-Za-z0-9_]*$"
+)
 
 
 # =============================================================================
@@ -180,19 +189,30 @@ def cpp_escape(value):
 
 
 def cpp_float(value):
-    """
-    Render a Python numeric value as a C++ floating-point literal.
-    """
     rendered = f"{float(value):.9g}"
 
-    if "." not in rendered and "e" not in rendered.lower():
+    if "." not in rendered and \
+        "e" not in rendered.lower():
         rendered += ".0"
 
     return rendered + "f"
 
 
+def cpp_display_indicator(indicator):
+    if indicator == "signed_flow":
+        return (
+            "SensorDisplayIndicator::"
+            "SIGNED_FLOW"
+        )
+
+    return (
+        "SensorDisplayIndicator::"
+        "NONE"
+    )
+
+
 # =============================================================================
-# Observation validation
+# Display validation
 # =============================================================================
 
 def validate_display(
@@ -204,7 +224,10 @@ def validate_display(
     )
 
     if display is None:
-        return []
+        return {
+            "scales": [],
+            "indicator": None,
+        }
 
     if not isinstance(
         display,
@@ -229,16 +252,12 @@ def validate_display(
             "display.scales must be a list"
         )
 
-    if not scales:
-        return []
-
     previous_threshold = None
-    normalised = []
+    normalised_scales = []
 
     for index, scale in enumerate(
         scales
     ):
-
         if not isinstance(
             scale,
             dict
@@ -282,20 +301,26 @@ def validate_display(
                 "threshold cannot be negative"
             )
 
-        if not isinstance(
-            divisor,
-            (int, float)
-        ) or divisor <= 0:
+        if (
+            not isinstance(
+                divisor,
+                (int, float)
+            )
+            or divisor <= 0
+        ):
             fail(
                 f"Observation '{alias}' "
                 f"display scale {index} "
                 "requires positive divisor"
             )
 
-        if not isinstance(
-            precision,
-            int
-        ) or precision < 0:
+        if (
+            not isinstance(
+                precision,
+                int
+            )
+            or precision < 0
+        ):
             fail(
                 f"Observation '{alias}' "
                 f"display scale {index} "
@@ -303,7 +328,10 @@ def validate_display(
             )
 
         if (
-            not isinstance(unit, str)
+            not isinstance(
+                unit,
+                str
+            )
             or not unit.strip()
         ):
             fail(
@@ -318,13 +346,12 @@ def validate_display(
         ):
             fail(
                 f"Observation '{alias}' "
-                "display thresholds must be "
-                "strictly increasing"
+                "display thresholds must be strictly increasing"
             )
 
         previous_threshold = threshold
 
-        normalised.append(
+        normalised_scales.append(
             {
                 "threshold": float(threshold),
                 "divisor": float(divisor),
@@ -333,15 +360,59 @@ def validate_display(
             }
         )
 
-    if normalised[0]["threshold"] != 0:
+    if (
+        normalised_scales
+        and normalised_scales[0]["threshold"] != 0
+    ):
         fail(
             f"Observation '{alias}' "
-            "first display scale must have "
-            "threshold 0"
+            "first display scale must have threshold 0"
         )
 
-    return normalised
+    indicator = display.get(
+        "indicator"
+    )
 
+    if indicator is not None:
+        if (
+            not isinstance(
+                indicator,
+                str
+            )
+            or not indicator.strip()
+        ):
+            fail(
+                f"Observation '{alias}' "
+                "display.indicator must be a non-empty string"
+            )
+
+        indicator = indicator.strip()
+
+        if indicator not in \
+            SUPPORTED_DISPLAY_INDICATORS:
+
+            supported = ", ".join(
+                sorted(
+                    SUPPORTED_DISPLAY_INDICATORS
+                )
+            )
+
+            fail(
+                f"Observation '{alias}' "
+                f"has unsupported display indicator "
+                f"'{indicator}'. "
+                f"Supported indicators: {supported}"
+            )
+
+    return {
+        "scales": normalised_scales,
+        "indicator": indicator,
+    }
+
+
+# =============================================================================
+# Observation validation
+# =============================================================================
 
 def validate_observations(
     observations
@@ -358,34 +429,35 @@ def validate_observations(
 
     aliases = set()
     semantic_keys = set()
-    source_values = set()
+    mqtt_topics = set()
 
     for alias, definition in observations.items():
 
-        # ---------------------------------------------------------------------
-        # Alias
-        # ---------------------------------------------------------------------
-
         if (
-            not isinstance(alias, str)
+            not isinstance(
+                alias,
+                str
+            )
             or not alias.strip()
         ):
             fail(
-                "Observation aliases must "
-                "be non-empty strings"
+                "Observation aliases must be non-empty strings"
+            )
+
+        if not CPP_IDENTIFIER_RE.match(
+            alias
+        ):
+            fail(
+                f"Observation alias '{alias}' "
+                "is not a valid C++ identifier"
             )
 
         if alias in aliases:
             fail(
-                f"Duplicate observation alias: "
-                f"{alias}"
+                f"Duplicate observation alias: {alias}"
             )
 
         aliases.add(alias)
-
-        # ---------------------------------------------------------------------
-        # Definition
-        # ---------------------------------------------------------------------
 
         if not isinstance(
             definition,
@@ -405,7 +477,10 @@ def validate_observations(
         )
 
         if (
-            not isinstance(key, str)
+            not isinstance(
+                key,
+                str
+            )
             or not key.strip()
         ):
             fail(
@@ -415,8 +490,7 @@ def validate_observations(
 
         if key in semantic_keys:
             fail(
-                f"Duplicate semantic observation key: "
-                f"{key}"
+                f"Duplicate semantic observation key: {key}"
             )
 
         semantic_keys.add(key)
@@ -469,7 +543,10 @@ def validate_observations(
             label = humanise(alias)
 
         if (
-            not isinstance(label, str)
+            not isinstance(
+                label,
+                str
+            )
             or not label.strip()
         ):
             fail(
@@ -477,7 +554,7 @@ def validate_observations(
                 "has an invalid label"
             )
 
-        display_scales = validate_display(
+        display = validate_display(
             alias,
             definition
         )
@@ -532,23 +609,16 @@ def validate_observations(
         ):
             fail(
                 f"Observation '{alias}' "
-                "MQTT source requires a "
-                "non-empty topic"
+                "MQTT source requires a non-empty topic"
             )
 
-        source_identity = (
-            source_type,
-            source_topic
-        )
-
-        if source_identity in source_values:
+        if source_topic in mqtt_topics:
             fail(
-                f"Duplicate source mapping: "
-                f"{source_type}:{source_topic}"
+                f"Duplicate MQTT topic: {source_topic}"
             )
 
-        source_values.add(
-            source_identity
+        mqtt_topics.add(
+            source_topic
         )
 
         normalised.append(
@@ -558,7 +628,8 @@ def validate_observations(
                 "type": observation_type,
                 "unit": unit,
                 "label": label,
-                "displayScales": display_scales,
+                "displayScales": display["scales"],
+                "displayIndicator": display["indicator"],
                 "sourceType": source_type,
                 "sourceTopic": source_topic,
             }
@@ -603,8 +674,15 @@ def validate_screens(
             or not screen_id.strip()
         ):
             fail(
-                "Screen IDs must be "
-                "non-empty strings"
+                "Screen IDs must be non-empty strings"
+            )
+
+        if not CPP_IDENTIFIER_RE.match(
+            screen_id
+        ):
+            fail(
+                f"Screen ID '{screen_id}' "
+                "is not a valid C++ identifier"
             )
 
         if not isinstance(
@@ -626,7 +704,10 @@ def validate_screens(
             )
 
         if (
-            not isinstance(title, str)
+            not isinstance(
+                title,
+                str
+            )
             or not title.strip()
         ):
             fail(
@@ -651,14 +732,16 @@ def validate_screens(
             "rows"
         )
 
-        if not isinstance(
-            rows,
-            list
-        ) or not rows:
+        if (
+            not isinstance(
+                rows,
+                list
+            )
+            or not rows
+        ):
             fail(
                 f"Screen '{screen_id}' "
-                "layout.rows must be a "
-                "non-empty list"
+                "layout.rows must be a non-empty list"
             )
 
         normalised_rows = []
@@ -667,15 +750,13 @@ def validate_screens(
         for row_index, row in enumerate(
             rows
         ):
-
             if not isinstance(
                 row,
                 dict
             ):
                 fail(
                     f"Screen '{screen_id}' "
-                    f"row {row_index} "
-                    "must be a mapping"
+                    f"row {row_index} must be a mapping"
                 )
 
             row_title = row.get(
@@ -691,18 +772,20 @@ def validate_screens(
             ):
                 fail(
                     f"Screen '{screen_id}' "
-                    f"row {row_index} "
-                    "requires a title"
+                    f"row {row_index} requires a title"
                 )
 
             items = row.get(
                 "items"
             )
 
-            if not isinstance(
-                items,
-                list
-            ) or not items:
+            if (
+                not isinstance(
+                    items,
+                    list
+                )
+                or not items
+            ):
                 fail(
                     f"Screen '{screen_id}' "
                     f"row '{row_title}' "
@@ -711,7 +794,10 @@ def validate_screens(
 
             for alias in items:
                 if (
-                    not isinstance(alias, str)
+                    not isinstance(
+                        alias,
+                        str
+                    )
                     or not alias.strip()
                 ):
                     fail(
@@ -725,8 +811,8 @@ def validate_screens(
 
                     fail(
                         f"Screen '{screen_id}' "
-                        f"references unknown "
-                        f"observation '{alias}'"
+                        f"references unknown observation "
+                        f"'{alias}'"
                     )
 
             max_columns = max(
@@ -758,8 +844,7 @@ def validate_screens(
 # =============================================================================
 
 def generate_composition_header():
-
-    return """\\
+    return """\
 #pragma once
 
 #include <stdint.h>
@@ -785,6 +870,8 @@ struct ObservationDefinition
 
     const SensorDisplayScale* displayScales;
     uint8_t displayScaleCount;
+
+    SensorDisplayIndicator displayIndicator;
 };
 
 
@@ -840,7 +927,6 @@ def generate_composition_cpp(
     observations,
     screens
 ):
-
     lines = [
         '#include "TelemetryComposition.h"',
         "",
@@ -856,7 +942,7 @@ def generate_composition_cpp(
     ]
 
     # -------------------------------------------------------------------------
-    # Display scales
+    # Display scale arrays
     # -------------------------------------------------------------------------
 
     for index, observation in enumerate(
@@ -871,7 +957,7 @@ def generate_composition_cpp(
 
         lines.extend(
             [
-                f"    constexpr SensorDisplayScale "
+                "    constexpr SensorDisplayScale "
                 f"displayScales_{index}[] =",
                 "    {",
             ]
@@ -883,7 +969,7 @@ def generate_composition_cpp(
                 f"{cpp_float(scale['threshold'])}, "
                 f"{cpp_float(scale['divisor'])}, "
                 f"{scale['precision']}, "
-                f'\"{cpp_escape(scale["unit"])}\"'
+                f'"{cpp_escape(scale["unit"])}"'
                 "},"
             )
 
@@ -897,11 +983,6 @@ def generate_composition_cpp(
     # -------------------------------------------------------------------------
     # Observation definitions
     # -------------------------------------------------------------------------
-    #
-    # IMPORTANT:
-    # This is a namespace-scope generated table. Runtime registration code is
-    # emitted only after the table has been completely closed.
-    #
 
     lines.extend(
         [
@@ -957,6 +1038,12 @@ def generate_composition_cpp(
             scale_pointer = "nullptr"
             scale_count = "0"
 
+        indicator = cpp_display_indicator(
+            observation[
+                "displayIndicator"
+            ]
+        )
+
         lines.append(
             "        {"
             f'"{alias}", '
@@ -968,7 +1055,8 @@ def generate_composition_cpp(
             f'"{source_topic}", '
             "ObservationHandle{}, "
             f"{scale_pointer}, "
-            f"{scale_count}"
+            f"{scale_count}, "
+            f"{indicator}"
             "},"
         )
 
@@ -986,11 +1074,9 @@ def generate_composition_cpp(
     for screen_index, screen in enumerate(
         screens
     ):
-
         for row_index, row in enumerate(
             screen["rows"]
         ):
-
             lines.extend(
                 [
                     f"    constexpr const char* const "
@@ -1024,20 +1110,20 @@ def generate_composition_cpp(
         for row_index, row in enumerate(
             screen["rows"]
         ):
-            title = cpp_escape(
+            row_title = cpp_escape(
                 row["title"]
             )
 
-            count = len(
+            item_count = len(
                 row["items"]
             )
 
             lines.append(
                 "        {"
-                f'"{title}", '
+                f'"{row_title}", '
                 f"screen_{screen_index}_row_"
                 f"{row_index}_items, "
-                f"{count}"
+                f"{item_count}"
                 "},"
             )
 
@@ -1069,7 +1155,7 @@ def generate_composition_cpp(
                 screen["id"]
             )
 
-            title = cpp_escape(
+            screen_title = cpp_escape(
                 screen["title"]
             )
 
@@ -1084,7 +1170,7 @@ def generate_composition_cpp(
             lines.append(
                 "        {"
                 f'"{screen_id}", '
-                f'"{title}", '
+                f'"{screen_title}", '
                 f"screen_{index}_rows, "
                 f"{row_count}, "
                 f"{columns}"
@@ -1115,10 +1201,6 @@ def generate_composition_cpp(
     # -------------------------------------------------------------------------
     # Observation registration
     # -------------------------------------------------------------------------
-    #
-    # This section consumes the generated definition table. It does not emit
-    # more initialiser entries into that table.
-    #
 
     lines.extend(
         [
@@ -1148,6 +1230,7 @@ def generate_composition_cpp(
             "        tile.unit = observation.unit;",
             "        tile.displayScales = observation.displayScales;",
             "        tile.displayScaleCount = observation.displayScaleCount;",
+            "        tile.displayIndicator = observation.displayIndicator;",
             "",
             "        if (!SensorRepository::registerObservation(",
             "                observation.handle,",
@@ -1280,7 +1363,6 @@ def generate_composition_cpp(
                 "",
             ]
         )
-
     else:
         lines.extend(
             [
@@ -1365,7 +1447,6 @@ def write_file(
 # =============================================================================
 
 def compose():
-
     document = load_document()
 
     observations_document = document.get(

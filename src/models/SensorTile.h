@@ -16,6 +16,7 @@
 //   - trend
 //   - validity
 //   - generic display scaling metadata
+//   - generic display indicator metadata
 //
 // This keeps the runtime data model independent of application domains.
 
@@ -47,4 +48,7 @@ struct SensorTile
 
     const SensorDisplayScale* displayScales = nullptr;
     uint8_t displayScaleCount = 0;
+
+    SensorDisplayIndicator displayIndicator =
+        SensorDisplayIndicator::NONE;
 };

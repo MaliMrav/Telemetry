@@ -102,60 +102,47 @@ observations:
       topic: ha/envoy/energy_consumption_today
 
 
-  energy_production_lifetime:
-    key: sensor.envoy_lifetime_energy_production
-    type: energy
-    unit: Wh
-    label: Production
+  battery_charge_percentage:
+    key: sensor.battery_charge_percentage
+    type: percentage
+    unit: "%"
+    label: Charge
 
     display:
       scales:
         - threshold: 0
-          unit: Wh
+          unit: "%"
           divisor: 1
           precision: 0
 
-        - threshold: 1000
-          unit: kWh
-          divisor: 1000
-          precision: 1
-
-        - threshold: 1000000
-          unit: MWh
-          divisor: 1000000
-          precision: 1
-
     source:
       type: mqtt
-      topic: ha/envoy/lifetime_energy_production
+      topic: ha/battery/charge_percentage
 
 
-  energy_consumption_lifetime:
-    key: sensor.envoy_lifetime_energy_consumption
-    type: energy
-    unit: Wh
-    label: Consumption
+  battery_power:
+    key: sensor.battery_power
+    type: power
+    unit: W
+    label: Power
 
     display:
       scales:
         - threshold: 0
-          unit: Wh
+          unit: W
           divisor: 1
-          precision: 0
+          precision: 1
 
         - threshold: 1000
-          unit: kWh
+          unit: kW
           divisor: 1000
           precision: 1
 
-        - threshold: 1000000
-          unit: MWh
-          divisor: 1000000
-          precision: 1
+      indicator: signed_flow
 
     source:
       type: mqtt
-      topic: ha/envoy/lifetime_energy_consumption
+      topic: ha/battery/power
 
 
 screens:
@@ -176,7 +163,7 @@ screens:
             - energy_production_today
             - energy_consumption_today
 
-        - title: Lifetime
+        - title: Battery
           items:
-            - energy_production_lifetime
-            - energy_consumption_lifetime
+            - battery_charge_percentage
+            - battery_power

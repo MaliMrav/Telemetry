@@ -12,8 +12,6 @@
 #include "../system/DebugOverlay.h"
 #include "ScreenConfig.h"
 
-#include "TelemetryComposition.h"
-
 #include <ArialRounded.h>
 #include <ESP8266WiFi.h>
 #include <time.h>
@@ -21,11 +19,16 @@
 
 namespace
 {
-    constexpr int ROWS = 3;
-    constexpr int COLS = 2;
-
     constexpr int MARGIN = 4;
     constexpr int GAP = 4;
+
+    constexpr const char* SCREEN_ID =
+        "energy_status";
+
+    constexpr int FLOW_ARROW_OFFSET = 12;
+    constexpr int FLOW_ARROW_WIDTH = 10;
+    constexpr int FLOW_SPACING = 6;
+    constexpr int FLOW_RIGHT_PAD = 6;
 }
 
 
@@ -42,57 +45,18 @@ void EnergyStatusScreen::enter()
     // Application composition
     // -------------------------------------------------------------------------
     //
-    // Observations are generated from telemetry.yaml.
-    //
-    // EnergyStatusScreen deliberately retains its current six-tile layout,
-    // but resolves those tiles through the generic composition interface
-    // rather than through generated member names.
+    // The layout and observation membership are supplied by telemetry.yaml.
     //
 
-    const auto findHandle =
-        [](const char* alias) -> ObservationHandle
-        {
-            const auto* observation =
-                TelemetryComposition::findObservation(
-                    alias);
-
-            if (!observation)
-            {
-                return ObservationHandle{};
-            }
-
-            return observation->handle;
-        };
-
-
-    currentProductionHandle_ =
-        findHandle(
-            "current_power_production");
-
-    currentConsumptionHandle_ =
-        findHandle(
-            "current_power_consumption");
-
-    todayProductionHandle_ =
-        findHandle(
-            "energy_production_today");
-
-    todayConsumptionHandle_ =
-        findHandle(
-            "energy_consumption_today");
-
-    lifetimeProductionHandle_ =
-        findHandle(
-            "energy_production_lifetime");
-
-    lifetimeConsumptionHandle_ =
-        findHandle(
-            "energy_consumption_lifetime");
+    screen_ =
+        TelemetryComposition::findScreen(
+            SCREEN_ID);
 }
 
 
 void EnergyStatusScreen::leave()
 {
+    screen_ = nullptr;
 }
 
 
@@ -357,77 +321,94 @@ void EnergyStatusScreen::drawWifiQuality()
 
 void EnergyStatusScreen::drawGrid()
 {
+    if (!screen_ ||
+        !screen_->rows ||
+        screen_->rowCount == 0)
+    {
+        return;
+    }
+
+
+    const int rows =
+        screen_->rowCount;
+
+
     const int topY =
         ScreenConfig::TOP_MARGIN;
-
-
-    const int tileW =
-        (
-            display_.getWidth() -
-            (2 * MARGIN) -
-            ((COLS - 1) * GAP)
-        ) / COLS;
 
 
     const int tileH =
         (
             display_.getHeight() -
             topY -
-            ((ROWS - 1) * GAP)
-        ) / ROWS;
+            ((rows - 1) * GAP)
+        ) / rows;
 
 
-    const ObservationHandle productionHandles[ROWS] =
+    for (uint8_t rowIndex = 0;
+         rowIndex < screen_->rowCount;
+         ++rowIndex)
     {
-        currentProductionHandle_,
-        todayProductionHandle_,
-        lifetimeProductionHandle_
-    };
+        const auto& row =
+            screen_->rows[rowIndex];
 
 
-    const ObservationHandle consumptionHandles[ROWS] =
-    {
-        currentConsumptionHandle_,
-        todayConsumptionHandle_,
-        lifetimeConsumptionHandle_
-    };
+        const int columns =
+            row.itemCount;
 
 
-    const char* rowLabels[ROWS] =
-    {
-        "Current",
-        "Today",
-        "Lifetime"
-    };
+        if (columns <= 0)
+        {
+            continue;
+        }
 
 
-    for (int row = 0;
-         row < ROWS;
-         ++row)
-    {
+        const int tileW =
+            (
+                display_.getWidth() -
+                (2 * MARGIN) -
+                ((columns - 1) * GAP)
+            ) / columns;
+
+
         const int y =
             topY +
-            row * (tileH + GAP);
+            rowIndex * (tileH + GAP);
 
 
-        drawQuadrant(
-            MARGIN,
-            y,
-            tileW,
-            tileH,
-            rowLabels[row],
-            "Production",
-            productionHandles[row]);
+        for (uint8_t columnIndex = 0;
+             columnIndex < row.itemCount;
+             ++columnIndex)
+        {
+            const char* alias =
+                row.items[columnIndex];
 
 
-        drawQuadrant(
-            MARGIN + tileW + GAP,
-            y,
-            tileW,
-            tileH,
-            rowLabels[row],
-            "Consumption",
-            consumptionHandles[row]);
+            const auto* observation =
+                TelemetryComposition::findObservation(
+                    alias);
+
+
+            if (!observation)
+            {
+                continue;
+            }
+
+
+            const int x =
+                MARGIN +
+                columnIndex *
+                    (tileW + GAP);
+
+
+            drawQuadrant(
+                x,
+                y,
+                tileW,
+                tileH,
+                row.title,
+                observation);
+        }
     }
 }
 
@@ -438,11 +419,17 @@ void EnergyStatusScreen::drawQuadrant(
     int w,
     int h,
     const char* rowLabel,
-    const char* columnLabel,
-    ObservationHandle handle)
+    const TelemetryComposition::ObservationDefinition* observation)
 {
+    if (!observation)
+    {
+        return;
+    }
+
+
     const SensorTile* tile =
-        SensorRepository::getTile(handle);
+        SensorRepository::getTile(
+            observation->handle);
 
 
     // -------------------------------------------------------------------------
@@ -479,6 +466,27 @@ void EnergyStatusScreen::drawQuadrant(
 
 
     // -------------------------------------------------------------------------
+    // Missing observation / invalid value
+    // -------------------------------------------------------------------------
+
+    if (!tile)
+    {
+        display_.setFont(
+            ArialMT_Plain_24);
+
+        display_.setColor(
+            DisplayManager::WHITE);
+
+        display_.drawString(
+            x + w / 2,
+            y + h / 2 - 7,
+            "--");
+
+        return;
+    }
+
+
+    // -------------------------------------------------------------------------
     // Value
     // -------------------------------------------------------------------------
 
@@ -488,25 +496,111 @@ void EnergyStatusScreen::drawQuadrant(
     display_.setColor(
         DisplayManager::WHITE);
 
+    const bool signedFlow =
+        tile->displayIndicator ==
+            SensorDisplayIndicator::SIGNED_FLOW &&
+        tile->valid &&
+        !isnan(tile->value) &&
+        tile->value != 0.0f;
+
+
+    const float displayValue =
+        signedFlow
+            ? fabs(tile->value)
+            : tile->value;
+
+
+    const String value =
+        formatValue(
+            *tile,
+            displayValue);
+
+
     display_.setTextAlignment(
         DisplayManager::CENTER);
 
 
-    const String value =
-        tile
-            ? formatValue(*tile)
-            : "--";
+    if (signedFlow)
+    {
+        const int arrowWidth =
+            FLOW_ARROW_WIDTH;
+
+        const int arrowSpacing =
+            FLOW_SPACING;
+
+        const int arrowOffset =
+            FLOW_ARROW_OFFSET;
+
+        const int rightPad =
+            FLOW_RIGHT_PAD;
 
 
-    display_.drawString(
-        x + w / 2,
-        y + h / 2 - 7,
-        value);
+        const int contentLeft =
+            x +
+            arrowOffset +
+            arrowWidth +
+            arrowSpacing;
+
+
+        const int contentRight =
+            x +
+            w -
+            rightPad;
+
+
+        const int contentWidth =
+            contentRight -
+            contentLeft;
+
+
+        const int valueWidth =
+            display_.getStringWidth(
+                value);
+
+
+        const int valueX =
+            contentLeft +
+            (contentWidth - valueWidth) / 2;
+
+
+        display_.setTextAlignment(
+            DisplayManager::LEFT);
+
+        display_.setColor(
+            tile->value > 0.0f
+                ? DisplayManager::RED
+                : DisplayManager::GREEN);
+
+
+        drawFlowArrow(
+            x + arrowOffset,
+            y + h / 2 + 2,
+            tile->value > 0.0f);
+
+
+        display_.setColor(
+            DisplayManager::WHITE);
+
+        display_.drawString(
+            valueX,
+            y + h / 2 - 7,
+            value);
+    }
+    else
+    {
+        display_.drawString(
+            x + w / 2,
+            y + h / 2 - 7,
+            value);
+    }
 
 
     // -------------------------------------------------------------------------
     // Measurement label
     // -------------------------------------------------------------------------
+
+    display_.setTextAlignment(
+        DisplayManager::CENTER);
 
     display_.setFont(
         ArialMT_Plain_10);
@@ -517,15 +611,81 @@ void EnergyStatusScreen::drawQuadrant(
     display_.drawString(
         x + w / 2,
         y + h - 14,
-        columnLabel);
+        observation->label);
+}
+
+
+void EnergyStatusScreen::drawFlowArrow(
+    int x,
+    int y,
+    bool upward)
+{
+    auto thick =
+        [&](int x1, int y1, int x2, int y2)
+        {
+            display_.drawLine(
+                x1,
+                y1,
+                x2,
+                y2);
+
+            display_.drawLine(
+                x1 + 1,
+                y1,
+                x2 + 1,
+                y2);
+        };
+
+
+    if (upward)
+    {
+        thick(
+            x,
+            y + 6,
+            x,
+            y - 6);
+
+        thick(
+            x,
+            y - 6,
+            x - 3,
+            y - 2);
+
+        thick(
+            x,
+            y - 6,
+            x + 3,
+            y - 2);
+
+        return;
+    }
+
+
+    thick(
+        x,
+        y - 6,
+        x,
+        y + 6);
+
+    thick(
+        x,
+        y + 6,
+        x - 3,
+        y + 2);
+
+    thick(
+        x,
+        y + 6,
+        x + 3,
+        y + 2);
 }
 
 
 String EnergyStatusScreen::formatValue(
-    const SensorTile& tile) const
+    const SensorTile& tile,
+    float value) const
 {
-    if (!tile.valid ||
-        isnan(tile.value))
+    if (isnan(value))
     {
         return "--";
     }
@@ -534,25 +694,23 @@ String EnergyStatusScreen::formatValue(
     // -------------------------------------------------------------------------
     // Generic display scaling
     // -------------------------------------------------------------------------
-    //
-    // Display policy is supplied by telemetry.yaml through the generated
-    // composition and attached to SensorTile.
-    //
 
     if (tile.displayScales &&
         tile.displayScaleCount > 0)
     {
         const float absoluteValue =
-            fabs(tile.value);
+            fabs(value);
 
         const SensorDisplayScale* selected =
             nullptr;
+
 
         for (uint8_t i = 0;
              i < tile.displayScaleCount;
              ++i)
         {
-            if (absoluteValue >=
+            if (
+                absoluteValue >=
                 tile.displayScales[i].threshold)
             {
                 selected =
@@ -560,10 +718,11 @@ String EnergyStatusScreen::formatValue(
             }
         }
 
+
         if (selected)
         {
             return String(
-                       tile.value /
+                       value /
                        selected->divisor,
                        selected->precision) +
                    " " +
@@ -578,8 +737,9 @@ String EnergyStatusScreen::formatValue(
 
     String result =
         String(
-            tile.value,
+            value,
             1);
+
 
     if (tile.unit &&
         tile.unit[0] != '\0')
@@ -590,6 +750,7 @@ String EnergyStatusScreen::formatValue(
         result +=
             tile.unit;
     }
+
 
     return result;
 }
