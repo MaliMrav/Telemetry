@@ -29,13 +29,13 @@
 //   CYAN    = 0x07FF
 //   MAGENTA = 0xF81F
 //
-// The DisplayManager::Color enum (BLACK=0, WHITE=1, YELLOW=2, BLUE=3)
+// The DisplayManager::Color enum (BLACK=0, WHITE=1, YELLOW=2, CYAN=3)
 // indexes into this array.
 static uint16_t display_palette[] = {
     ILI9341_BLACK,   // 0
     ILI9341_WHITE,   // 1
     ILI9341_YELLOW,  // 2
-    ILI9341_BLUE     // 3
+    ILI9341_CYAN     // 3
 };
 
 // Bits per pixel for the framebuffer.

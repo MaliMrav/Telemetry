@@ -153,7 +153,7 @@ void WeatherScreen::drawHeader()
         display_.setColor(DisplayManager::WHITE);
         display_.fillRect(8, 32, 34, 18);
 
-        display_.setColor(DisplayManager::BLUE);
+        display_.setColor(DisplayManager::CYAN);
         display_.drawString(25, 34, amPm);
     }
 }
@@ -313,7 +313,7 @@ void WeatherScreen::drawSensorGrid()
         {
             display_.setColor(
                 s->trend == TREND_UP   ? DisplayManager::YELLOW :
-                s->trend == TREND_DOWN ? DisplayManager::BLUE   :
+                s->trend == TREND_DOWN ? DisplayManager::CYAN   :
                                          DisplayManager::WHITE);
 
             drawTrendArrow(
@@ -332,7 +332,7 @@ void WeatherScreen::drawSensorGrid()
 
         display_.setTextAlignment(DisplayManager::CENTER);
         display_.setFont(ArialMT_Plain_10);
-        display_.setColor(DisplayManager::BLUE);
+        display_.setColor(DisplayManager::CYAN);
 
         if (!isnan(s->minVal) &&
             !isnan(s->maxVal))
@@ -457,7 +457,7 @@ DisplayManager::Color WeatherScreen::getColor(
     if (tile.unit &&
         strcmp(tile.unit, "%") == 0)
     {
-        return DisplayManager::BLUE;
+        return DisplayManager::CYAN;
     }
 
     if (tile.unit &&

@@ -288,7 +288,7 @@
 // When enabled, a two-line diagnostic bar is rendered at the bottom of the
 // display after every touch event, showing:
 //   Line 1 (yellow) — the mapped InputAction and calibrated screen coordinates
-//   Line 2 (blue)   — the raw ADC values from the XPT2046 touch controller
+//   Line 2 (cyan)   — the raw ADC values from the XPT2046 touch controller
 //
 // Disabled by default. Enable in config_override.h by uncommenting:
 //   #define DEBUG_OVERLAY

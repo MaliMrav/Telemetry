@@ -212,7 +212,7 @@
 // Renders a two-line diagnostic bar at the bottom of the display on every
 // touch event:
 //   Line 1 (yellow) — InputAction and calibrated screen coordinates
-//   Line 2 (blue)   — raw ADC values from the XPT2046
+//   Line 2 (cyan)   — raw ADC values from the XPT2046
 //
 // Useful for diagnosing touch calibration and input pipeline issues without
 // needing a serial connection. Compiles away completely when not defined.

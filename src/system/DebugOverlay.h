@@ -93,11 +93,11 @@ namespace DebugOverlay
         display.setColor(DisplayManager::YELLOW);
         display.drawString(4, 297, mapped);
 
-        // Line 2 (blue): raw ADC coordinates from XPT2046
+        // Line 2 (cyan): raw ADC coordinates from XPT2046
         String raw = "raw x=" + String(state().lastRawX) +
                      " y="   + String(state().lastRawY);
 
-        display.setColor(DisplayManager::BLUE);
+        display.setColor(DisplayManager::CYAN);
         display.drawString(4, 308, raw);
 
         display.commit();

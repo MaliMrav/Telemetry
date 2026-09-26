@@ -56,7 +56,7 @@ void BootScreen::update()
         15);
 
     display_.setColor(
-        DisplayManager::BLUE);
+        DisplayManager::CYAN);
 
     display_.fillRect(
         12,

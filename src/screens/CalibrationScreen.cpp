@@ -75,7 +75,7 @@ void CalibrationScreen::drawStatus()
 
     display_.setFont(ArialMT_Plain_10);
     display_.setColor(
-        calibrationSaved_ ? DisplayManager::BLUE : DisplayManager::YELLOW);
+        calibrationSaved_ ? DisplayManager::CYAN : DisplayManager::YELLOW);
 
     display_.drawString(
         120,

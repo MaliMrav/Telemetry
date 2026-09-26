@@ -22,7 +22,7 @@ public:
     BLACK  = 0,
     WHITE  = 1,
     YELLOW = 2,
-    BLUE   = 3
+    CYAN   = 3
   };
 
   enum TextAlignment : uint8_t {

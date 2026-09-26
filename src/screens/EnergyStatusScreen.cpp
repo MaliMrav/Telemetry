@@ -249,7 +249,7 @@ void EnergyStatusScreen::drawHeader()
             18);
 
         display_.setColor(
-            DisplayManager::BLUE);
+            DisplayManager::CYAN);
 
         display_.drawString(
             25,
@@ -569,7 +569,7 @@ void EnergyStatusScreen::drawQuadrant(
         display_.setColor(
             tile->value > 0.0f
                 ? DisplayManager::YELLOW
-                : DisplayManager::BLUE);
+                : DisplayManager::CYAN);
 
 
         drawFlowArrow(
@@ -606,7 +606,7 @@ void EnergyStatusScreen::drawQuadrant(
         ArialMT_Plain_10);
 
     display_.setColor(
-        DisplayManager::YELLOW);
+        DisplayManager::CYAN);
 
     display_.drawString(
         x + w / 2,
