@@ -606,11 +606,11 @@ void EnergyStatusScreen::drawQuadrant(
         ArialMT_Plain_10);
 
     display_.setColor(
-        DisplayManager::BLUE);
+        DisplayManager::YELLOW);
 
     display_.drawString(
         x + w / 2,
-        y + h - 14,
+        y + h - 18,
         observation->label);
 }
 
