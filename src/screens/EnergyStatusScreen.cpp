@@ -568,8 +568,8 @@ void EnergyStatusScreen::drawQuadrant(
 
         display_.setColor(
             tile->value > 0.0f
-                ? DisplayManager::RED
-                : DisplayManager::GREEN);
+                ? DisplayManager::YELLOW
+                : DisplayManager::BLUE);
 
 
         drawFlowArrow(
