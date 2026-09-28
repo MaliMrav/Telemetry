@@ -822,7 +822,7 @@ Phase 9 is complete when:
 
 By this stage Telemetry will have a generic composition model and a generic set of Card renderers.
 
-The next pressure is to make the relationship between those capabilities and real hardware explicit.
+The next pressure is to make the relationship between those capabilities and real hardware, explicit.
 
 The framework should not pretend that every target can render every Card equally cheaply.
 
