@@ -955,7 +955,7 @@ Sprint Eta establishes three major axes alongside the existing framework boundar
           │                  │                  │
  ObservationHandle    Screen / Canvas /    ESP8266 / ESP32
           │            Card composition       capabilities
-      Repository              │                  │
+      Repository             │                  │
           │             generated model         │
           └──────────────────┼──────────────────┘
                              │
