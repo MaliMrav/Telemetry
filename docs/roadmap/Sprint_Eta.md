@@ -375,7 +375,7 @@ The important architectural move is to establish the Canvas boundary first:
 ```text
 ┌───────────────────────────────────────┐
 │              Screen Chrome            │
-│         title / date / time            │
+│         title / date / time           │
 ├───────────────────────────────────────┤
 │                                       │
 │                Canvas                 │
