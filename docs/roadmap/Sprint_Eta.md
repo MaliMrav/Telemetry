@@ -213,27 +213,172 @@ Legacy Weather mappings remain as transitional code until Weather is migrated in
 
 ---
 
-# Phase 7 — Migrate Screen Consumers to Generic Composition
+# Phase 7 — Generic Screen Composition
 
 **Status: In Progress**
 
-Energy Status currently consumes generated observation definitions, but its presentation code still contains the specific six-tile layout.
+## The Pressure
 
-The target is:
+Energy Status currently consumes the generated ScreenDefinition,
+but the Screen still interprets that definition through the
+implementation concept of rows, columns and six fixed quadrants.
 
-```text
+That means the proving slice has demonstrated declarative
+observation membership without yet achieving declarative
+presentation composition.
+
+The next pressure is therefore:
+
+> Can a Screen become a generic canvas onto which the application
+> composes presentation components, without the Screen implementation
+> knowing which observations or layout happen to exist?
+
+The six-tile Energy Status layout is a proving implementation,
+not the architectural destination.
+
+## The Target
+
+The target composition is:
+
 telemetry.yaml
       ↓
 ScreenDefinition
       ↓
-generic runtime Screen composition
+Canvas
       ↓
-SensorRepository
+Card definitions
+      ↓
+Observation references
+      ↓
+Card renderers
       ↓
 DisplayManager
+
+The Screen implementation should provide the runtime machinery
+required to render a declarative composition.
+
+It should not contain knowledge of:
+
+- which observations exist;
+- how many cards exist;
+- which observations belong together;
+- whether the layout uses two columns, three columns, or another grid;
+- whether an observation is presented as a value, gauge, battery,
+  entity list, graph, or another supported card type.
+
+## Cards
+
+A Card is a generic presentation component.
+
+For example:
+
+```yaml
+- type: battery
+  observation: battery_charge_percentage
+  grid:
+    column: 1
+    row: 1
+    columns: 4
+    rows: 3
+```
+or:
+
+```yaml
+- type: gauge
+  observation: current_power_production
+  grid:
+    column: 5
+    row: 1
+    columns: 4
+    rows: 3
+```
+The observation supplies the knowledge.
+
+The Card supplies the presentation.
+
+The grid supplies the geometry.
+
+## Canvas
+
+A Screen contains a declarative Canvas.
+
+The Canvas defines a logical grid rather than physical pixels.
+
+For example:
+
+```yaml
+canvas:
+  columns: 9
+  rows: 5
 ```
 
-The Screen should not have to know which aliases happen to exist in the application.
+Cards occupy regions of that grid.
+
+The layout system converts those logical regions into physical display
+coordinates.
+
+This keeps application composition independent of display resolution
+and display-driver implementation.
+
+## Presentation Types
+
+The initial proving set should remain deliberately small.
+
+Possible initial card types include:
+- value
+- gauge
+- battery
+- entitie3s
+
+Additional card types can be introduced when architectural pressure
+requires them.
+
+## A Card type is a framework capability.
+
+The application chooses which capability to compose.
+
+Observation and Presentation Remain Separate
+
+An observation must not become a visual component.
+
+The same observation may be rendered by multiple Card types:
+
+```
+battery_charge_percentage
+        │
+        ├── BatteryCard
+        ├── GaugeCard
+        └── EntitiesCard
+```
+
+This preserves the distinction between application knowledge and
+presentation.
+
+## Platform Capability
+
+Card capabilities remain subject to platform composition.
+
+A Card may be architecturally valid but unavailable on a constrained
+target.
+
+The ESP8266 therefore remains a useful capability boundary rather
+than forcing the framework to pretend every presentation is equally
+cheap.
+
+## Definition of Done
+
+Phase 7 is complete when:
+
+- [ ]  Energy Status no longer assumes a six-quadrant layout.
+- [ ] Screen layout is represented as a logical Canvas.
+- [ ] Cards can occupy configurable grid regions.
+- [ ] Cards reference observations by composition alias.
+- [ ] Observation identity remains independent of presentation.
+- [ ] At least two generic Card types can render heterogeneous observations.
+- [ ] A Screen can be rearranged through telemetry.yaml without modifying Screen implementation code.
+- [ ] The Screen renderer contains no application-specific observation aliases.
+- [ ] Layout is independent of physical display pixels.
+- [ ] Platform capabilities can constrain available Card types without hanging application semantics.
 
 ---
 
