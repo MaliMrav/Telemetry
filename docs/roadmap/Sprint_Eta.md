@@ -2,7 +2,7 @@
 
 ## Objective
 
-> **Establish a single declarative application definition from which Telemetry can validate and generate the runtime structures required to provision observations and Screens, while preserving the existing framework boundaries.**
+> **Establish a single declarative application definition from which Telemetry can validate and generate the runtime structures required to compose observations and Screens, while preserving the existing framework boundaries and making platform capability an explicit architectural boundary.**
 
 Sprint Zeta separated observation identity, runtime handles, repository storage and source mechanisms.
 
@@ -12,7 +12,7 @@ It also exposed the next pressure.
 
 The framework now had reusable pieces, but the application still assembled them manually across multiple implementation files.
 
-Adding a Screen could require changes to:
+Adding or changing a Screen could require changes to:
 
 - observation declarations
 - source mappings
@@ -21,12 +21,19 @@ Adding a Screen could require changes to:
 - display formatting
 - navigation
 - application construction
+- layout details
 
 The next architectural question was therefore:
 
-> **Can the application describe its knowledge once and let the build system provision the framework structures it needs?**
+> **Can the application describe its knowledge and presentation intent once, and let the build system provision the framework structures required to express it?**
 
 Sprint Eta establishes the declarative composition model that answers that question.
+
+It also establishes an important constraint on that answer:
+
+> **Generic composition must not mean unlimited runtime complexity.**
+
+Telemetry must be able to describe a rich application while still respecting the capabilities of the target platform. The ESP8266 has already demonstrated that there are practical resource boundaries. Those boundaries are part of the architecture, not an implementation inconvenience to be hidden later.
 
 ---
 
@@ -50,7 +57,13 @@ Sprint Eta establishes these principles:
 
 > **Screens consume generated composition; they do not own repository storage or source mapping.**
 
-> **The framework remains independent of application domains such as Weather or Solar.**
+> **The framework remains independent of application domains such as Weather, Solar or AlphaESS.**
+
+> **Presentation is a framework capability; composition selects which capabilities an application uses.**
+
+> **Logical layout is independent of physical display pixels.**
+
+> **Platform limits may constrain presentation capabilities without changing application meaning.**
 
 ---
 
@@ -94,6 +107,22 @@ current_power_production:
 
 No numeric repository ID is required.
 
+The YAML alias is a composition handle.
+
+The semantic key is the application's stable identity for the observation.
+
+This establishes an important separation:
+
+```text
+composition handle
+        ↓
+semantic identity
+        ↓
+runtime identity
+```
+
+The application names what it knows without needing to know how the runtime stores it.
+
 ---
 
 # Phase 2 — Make the Composer Domain-Neutral
@@ -108,6 +137,7 @@ Solar
 Weather
 Envoy
 Home Assistant
+AlphaESS
 ```
 
 It validates structure and translates declared metadata.
@@ -128,13 +158,17 @@ composer as translator
 
 Only the second is acceptable.
 
+The composer therefore knows about the structure of a declaration, the capabilities it can translate, and the validation rules required to produce valid generated code.
+
+It does not decide what the application means.
+
 ---
 
 # Phase 3 — Generate Generic Observation Definitions
 
 **Status: Complete**
 
-The composer generates a generic `ObservationDefinition` table containing:
+The composer generates a generic `ObservationDefinition` table containing the information required to bridge application composition to runtime structures:
 
 ```text
 alias
@@ -151,6 +185,22 @@ displayScaleCount
 
 This creates a stable bridge between YAML and runtime.
 
+The important architectural relationship is:
+
+```text
+telemetry.yaml
+      ↓
+ObservationDefinition
+      ↓
+ObservationKey
+      ↓
+ObservationHandle
+      ↓
+SensorRepository
+```
+
+The generated definition is an implementation bridge, not a second source of truth.
+
 ---
 
 # Phase 4 — Make `SensorTile` Domain-Neutral
@@ -163,13 +213,19 @@ The runtime tile now carries generic presentation state and generic display-scal
 
 Domain meaning remains in observation definitions rather than becoming a runtime enum.
 
+This allows the same runtime data model to represent observations from completely different domains.
+
+The framework therefore does not need to know that one value is solar production while another is temperature merely to store or display it.
+
 ---
 
 # Phase 5 — Generate Screen Definitions
 
 **Status: Complete**
 
-`telemetry.yaml` now supports:
+`telemetry.yaml` now supports declarative Screen composition.
+
+The proving model introduced structures such as:
 
 ```yaml
 screens:
@@ -185,7 +241,15 @@ screens:
 
 The composer validates that every Screen item refers to a declared observation alias.
 
-This is the first important step toward Screen provisioning from a single declarative source.
+This was the first important step toward Screen provisioning from a single declarative source.
+
+It also produced the Energy Composition Proving Slice.
+
+The proving slice demonstrated that the Screen's membership and ordering could come from YAML rather than from hardcoded observation knowledge inside the Screen implementation.
+
+That was deliberately a proving step.
+
+It is not the final Screen architecture.
 
 ---
 
@@ -211,6 +275,8 @@ SensorRepository
 
 Legacy Weather mappings remain as transitional code until Weather is migrated into the composition model.
 
+This removes duplicated application knowledge and reinforces the principle that the application should declare an observation once.
+
 ---
 
 # Phase 7 — Generic Screen Composition
@@ -219,27 +285,47 @@ Legacy Weather mappings remain as transitional code until Weather is migrated in
 
 ## The Pressure
 
-Energy Status currently consumes the generated ScreenDefinition,
-but the Screen still interprets that definition through the
-implementation concept of rows, columns and six fixed quadrants.
+The Energy Composition Proving Slice has achieved an important goal: the Screen can consume generated observation composition.
 
-That means the proving slice has demonstrated declarative
-observation membership without yet achieving declarative
-presentation composition.
+But it also exposed a new problem.
 
-The next pressure is therefore:
+The Screen still interprets that composition through an implementation concept of rows, columns and six fixed quadrants.
 
-> Can a Screen become a generic canvas onto which the application
-> composes presentation components, without the Screen implementation
-> knowing which observations or layout happen to exist?
+That means the proving mechanism has started to become the abstraction itself.
 
-The six-tile Energy Status layout is a proving implementation,
-not the architectural destination.
+The architecture must not make that mistake.
+
+The six-tile Energy Status layout is a proving implementation, not the architectural destination.
+
+The real pressure is:
+
+> **Can a Screen become a generic canvas onto which the application composes presentation components, without the Screen implementation knowing which observations or layout happen to exist?**
+
+This is a composition problem, not an Energy Screen problem.
 
 ## The Target
 
-The target composition is:
+The intended model is:
 
+```text
+Application Definition
+    │
+    ├── observations
+    │
+    └── screens
+          │
+          ├── chrome
+          │
+          └── canvas
+                │
+                └── cards
+                      │
+                      └── observation references
+```
+
+At runtime, the relationship becomes:
+
+```text
 telemetry.yaml
       ↓
 ScreenDefinition
@@ -252,19 +338,56 @@ Observation references
       ↓
 Card renderers
       ↓
+SensorRepository
+      ↓
 DisplayManager
+```
 
-The Screen implementation should provide the runtime machinery
-required to render a declarative composition.
+The Screen implementation provides the runtime machinery required to render a declarative composition.
 
 It should not contain knowledge of:
 
 - which observations exist;
 - how many cards exist;
 - which observations belong together;
-- whether the layout uses two columns, three columns, or another grid;
-- whether an observation is presented as a value, gauge, battery,
-  entity list, graph, or another supported card type.
+- whether the layout uses two columns, three columns or another grid;
+- whether a card is a value, gauge, battery, entities list, graph or another supported capability;
+- the application-specific meaning of those observations.
+
+## Screen Chrome and Canvas
+
+The current display already has a useful conceptual separation.
+
+The upper area contains Screen chrome such as:
+
+- title
+- date
+- time
+- status indicators
+- Wi-Fi state
+
+The remaining display real estate can be treated as the Screen's Canvas.
+
+Initially, this does **not** require making the chrome fully declarative.
+
+The important architectural move is to establish the Canvas boundary first:
+
+```text
+┌───────────────────────────────────────┐
+│              Screen Chrome            │
+│         title / date / time            │
+├───────────────────────────────────────┤
+│                                       │
+│                Canvas                 │
+│                                       │
+│   Card       Card        Card         │
+│                                       │
+│        Card                Card       │
+│                                       │
+└───────────────────────────────────────┘
+```
+
+If architectural pressure later demonstrates that chrome should also become composable, that can be introduced deliberately rather than assumed in advance.
 
 ## Cards
 
@@ -281,7 +404,8 @@ For example:
     columns: 4
     rows: 3
 ```
-or:
+
+Or:
 
 ```yaml
 - type: gauge
@@ -292,97 +416,356 @@ or:
     columns: 4
     rows: 3
 ```
+
 The observation supplies the knowledge.
 
 The Card supplies the presentation.
 
 The grid supplies the geometry.
 
-## Canvas
+This preserves three separate concepts instead of collapsing them into one object.
 
-A Screen contains a declarative Canvas.
+```text
+Observation = knowledge
+Card        = presentation
+Canvas      = composition + geometry
+Screen      = runtime context
+```
 
-The Canvas defines a logical grid rather than physical pixels.
+## Initial Card Vocabulary
+
+The initial framework vocabulary should remain deliberately small.
+
+Candidate proving capabilities are:
+
+- `value`
+- `gauge`
+- `battery`
+- `entities`
+
+These are examples of framework capabilities, not a promise to reproduce Home Assistant's card catalogue.
+
+Home Assistant may be an inspiration for the user experience, but Telemetry's architectural model remains its own.
+
+Telemetry models **Observations**, not an application-specific entity system.
+
+Additional Card types should be introduced when real architectural pressure justifies them.
+
+Possible future examples include:
+
+- graph
+- trend
+- weather
+- image
+- button
+- switch
+- progress
+- statistics
+
+No future Card type should be introduced merely because it is fashionable or because another UI system has it.
+
+## The Battery Example
+
+A battery observation illustrates why presentation must remain separate from domain knowledge.
+
+For example, the application may declare:
+
+```yaml
+battery_charge_percentage:
+  key: sensor.alphaess_instantaneous_battery_soc
+  type: percentage
+  unit: "%"
+```
+
+That observation could later be presented as:
+
+```text
+Battery Card
+┌─────────────────────────────┐
+│ ███████████████░░░░   82 % │
+└─────────────────────────────┘
+```
+
+The Card could map semantic threshold roles such as:
+
+```yaml
+thresholds:
+  - below: 15
+    role: critical
+  - below: 50
+    role: warning
+  - role: normal
+```
+
+The application expresses the meaning of the thresholds.
+
+The platform decides how those semantic roles map onto its available visual capabilities.
+
+For example, the ESP8266 may have only a small palette available, while a stronger ESP32 target may support a richer colour representation.
+
+The application should not need to encode the physical palette in order to say:
+
+```text
+critical
+warning
+normal
+```
+
+This is an important separation between application semantics and platform expression.
+
+## The Canvas Is a Logical Grid
+
+The Canvas should describe logical geometry rather than physical pixels.
 
 For example:
 
 ```yaml
 canvas:
-  columns: 9
-  rows: 5
+  columns: 12
 ```
 
-Cards occupy regions of that grid.
+A Card occupies a region of that logical grid:
 
-The layout system converts those logical regions into physical display
-coordinates.
-
-This keeps application composition independent of display resolution
-and display-driver implementation.
-
-## Presentation Types
-
-The initial proving set should remain deliberately small.
-
-Possible initial card types include:
-- value
-- gauge
-- battery
-- entitie3s
-
-Additional card types can be introduced when architectural pressure
-requires them.
-
-## A Card type is a framework capability.
-
-The application chooses which capability to compose.
-
-Observation and Presentation Remain Separate
-
-An observation must not become a visual component.
-
-The same observation may be rendered by multiple Card types:
-
-```
-battery_charge_percentage
-        │
-        ├── BatteryCard
-        ├── GaugeCard
-        └── EntitiesCard
+```yaml
+grid:
+  column: 1
+  row: 1
+  columns: 4
+  rows: 3
 ```
 
-This preserves the distinction between application knowledge and
-presentation.
+The layout system translates this logical geometry into physical display coordinates.
 
-## Platform Capability
+This keeps application composition independent of:
 
-Card capabilities remain subject to platform composition.
+- display resolution
+- screen orientation
+- pixel offsets
+- driver implementation
+- device-specific margins
 
-A Card may be architecturally valid but unavailable on a constrained
-target.
+The application therefore describes:
 
-The ESP8266 therefore remains a useful capability boundary rather
-than forcing the framework to pretend every presentation is equally
-cheap.
+```text
+where a thing belongs conceptually
+```
+
+rather than:
+
+```text
+which pixels happen to render it today
+```
+
+## Deterministic Runtime Behaviour
+
+Generic composition must not automatically imply dynamic allocation or a large runtime UI framework.
+
+Telemetry targets resource-constrained microcontrollers.
+
+The logical Canvas and Card model should therefore be capable of compiling into deterministic runtime structures such as:
+
+```text
+static ScreenDefinition
+static CanvasDefinition
+static CardDefinition[]
+static observation references
+```
+
+The build-time composer can validate:
+
+- card type availability
+- grid bounds
+- overlapping regions, where prohibited
+- observation references
+- Card-specific configuration
+- platform capability constraints
+- total composition capacity
+
+The runtime should execute the validated result rather than constructing an arbitrary UI system dynamically.
+
+That keeps the architecture generic without requiring the runtime to become heavyweight.
+
+## Resource Pressure Is an Architectural Concern
+
+This phase explicitly recognises a question raised by the ESP8266 platform boundary:
+
+> **At what point does generic composition itself become too expensive for the target?**
+
+The answer must not be guessed from desktop intuition.
+
+It should be discovered empirically.
+
+The earlier framebuffer experiment already established this pattern. Increasing display depth compiled successfully but caused the ESP8266 to enter a runtime reboot loop. The lesson was not merely that a particular experiment failed.
+
+The lesson was:
+
+> **Platform resource limits are architectural knowledge.**
+
+The same reasoning applies to Screen composition.
+
+A generic Screen could consume resources through:
+
+- framebuffer size
+- Card metadata
+- generated code size
+- RAM used by runtime structures
+- stack usage
+- renderer complexity
+- temporary buffers
+- font assets
+- graphing or image data
+- rendering time
+
+The architecture therefore needs a capability model in which a target can say:
+
+```text
+ValueCard       available
+GaugeCard       available
+BatteryCard     available
+EntitiesCard    available
+GraphCard       unavailable
+RichChartCard   unavailable
+```
+
+without changing what the application means by its observations.
+
+This is not a failure of generic composition.
+
+It is the architecture discovering the actual capability boundary of the platform.
 
 ## Definition of Done
 
 Phase 7 is complete when:
 
-- [ ]  Energy Status no longer assumes a six-quadrant layout.
-- [ ] Screen layout is represented as a logical Canvas.
-- [ ] Cards can occupy configurable grid regions.
+- [ ] Energy Status no longer assumes a six-quadrant layout.
+- [ ] The Screen concept contains a logical Canvas.
+- [ ] Cards can occupy configurable logical grid regions.
 - [ ] Cards reference observations by composition alias.
 - [ ] Observation identity remains independent of presentation.
-- [ ] At least two generic Card types can render heterogeneous observations.
-- [ ] A Screen can be rearranged through telemetry.yaml without modifying Screen implementation code.
 - [ ] The Screen renderer contains no application-specific observation aliases.
 - [ ] Layout is independent of physical display pixels.
-- [ ] Platform capabilities can constrain available Card types without hanging application semantics.
+- [ ] Screen chrome is conceptually separated from Canvas composition.
+- [ ] Composition can be represented by deterministic generated structures.
+- [ ] The design has an explicit place for platform capability constraints.
 
 ---
 
-# Phase 8 — Migrate Weather into Declarative Composition
+# Phase 8 — Generic Card Rendering
+
+**Status: Planned**
+
+Phase 7 establishes what a generic Screen is.
+
+Phase 8 establishes how the framework renders the generic Card capabilities used by that Screen.
+
+The distinction is deliberate.
+
+Phase 7 is primarily an architectural and composition problem.
+
+Phase 8 is primarily a framework rendering problem.
+
+## The Target
+
+The framework should provide reusable Card renderers behind a stable capability boundary.
+
+Conceptually:
+
+```text
+CardDefinition
+      ↓
+Card renderer selection
+      ↓
+Card renderer
+      ↓
+Observation runtime state
+      ↓
+DisplayManager
+```
+
+A renderer should not know which application declared the Card.
+
+For example, `BatteryCard` should know how to render a battery representation from an observation.
+
+It should not know that the observation came from AlphaESS.
+
+Similarly, `GaugeCard` should know how to render a gauge.
+
+It should not know that the value represents solar production.
+
+## Initial Renderer Set
+
+The initial proving set should remain deliberately small:
+
+```text
+ValueCard
+GaugeCard
+BatteryCard
+EntitiesCard
+```
+
+The implementation should prove that multiple Card types can consume the same generic observation model without introducing domain-specific runtime dependencies.
+
+## Card-Specific Configuration
+
+Card-level configuration belongs to the Card rather than being forced into the Observation.
+
+For example, a gauge may need:
+
+- minimum
+- maximum
+- scale
+- display mode
+
+A battery may need:
+
+- threshold roles
+- fill behaviour
+- orientation
+
+An entities card may need:
+
+- a list of observations
+- ordering
+- optional per-item labels
+
+These are presentation concerns.
+
+The Observation remains responsible for what is being observed and how its value is identified and sourced.
+
+## Resource Budget
+
+Phase 8 must treat resource usage as a first-class implementation requirement.
+
+A generic renderer architecture is only successful if it remains viable on the target platforms for which the capability is declared.
+
+The implementation should therefore prefer:
+
+- fixed-capacity structures
+- static generated definitions
+- deterministic renderer state
+- predictable memory use
+- shared assets where practical
+- reuse of existing DisplayManager primitives
+- build-time validation of unsupported combinations
+
+The framework should not introduce heap-heavy general-purpose UI mechanisms merely to make the composition API look elegant.
+
+## Definition of Done
+
+Phase 8 is complete when:
+
+- [ ] At least two Card renderer types exist behind a generic Card interface or equivalent capability boundary.
+- [ ] Card renderers consume generic Observation runtime state.
+- [ ] No Card renderer contains application-specific observation aliases.
+- [ ] Card-specific configuration is separated from Observation identity.
+- [ ] The Canvas layout can invoke multiple Card types in one Screen.
+- [ ] Rendering remains deterministic on supported platforms.
+- [ ] Resource usage is measured rather than assumed.
+- [ ] Unsupported Card/platform combinations are rejected or excluded at composition time.
+
+---
+
+# Phase 9 — Migrate Weather into Composition
 
 **Status: Planned**
 
@@ -402,44 +785,137 @@ observations:
     ...
 ```
 
-The Weather Screen can then consume the generated Screen definition rather than maintaining its own observation list.
+The Weather Screen should then consume the same generated Screen and Card composition model as Energy.
 
-The final result should allow Weather to become an example of the same composition model as Energy rather than a special architectural case.
+The result should be that Weather becomes another application composition example rather than a special architectural case.
+
+## Why Weather Comes After Generic Cards
+
+Weather is an especially useful proving domain because it can exercise several forms of presentation:
+
+- current value
+- trend
+- grouped observations
+- multiple units
+- future graphical presentation
+
+Migrating Weather after the generic Screen and Card model exists prevents Weather-specific rendering requirements from accidentally defining the framework abstraction.
+
+The framework should discover what Weather actually requires instead of assuming that an existing Weather Screen is itself the generic model.
+
+## Definition of Done
+
+Phase 9 is complete when:
+
+- [ ] Weather observations are declared in `telemetry.yaml`.
+- [ ] Weather observation sources are co-located with those observations.
+- [ ] Weather observations resolve through generated composition.
+- [ ] Weather no longer requires a parallel domain-specific registration path.
+- [ ] Weather Screen composition is represented by the same Canvas/Card model as Energy.
+- [ ] Weather-specific behaviour remains isolated where it is genuinely specialised.
 
 ---
 
-# Phase 9 — Provision Screens Without Hand-Wiring Application Knowledge
+# Phase 10 — Platform-Aware Presentation Capabilities
 
 **Status: Planned**
 
-The intended authoring workflow is:
+By this stage Telemetry will have a generic composition model and a generic set of Card renderers.
+
+The next pressure is to make the relationship between those capabilities and real hardware explicit.
+
+The framework should not pretend that every target can render every Card equally cheaply.
+
+## Capability Model
+
+Conceptually:
 
 ```text
-1. Declare observations
+Framework capability
         ↓
-2. Compose the Screen
+Card type
         ↓
-3. Build
+Platform support
 ```
 
-A developer should not need to modify several unrelated runtime files merely because a new application Screen exists.
+For example:
 
-This does not mean all Screen behaviour becomes declarative.
+```text
+                     ESP8266        ESP32
 
-Presentation behaviour, interaction logic and specialised rendering may remain code.
+ValueCard               ✓             ✓
+GaugeCard               ✓             ✓
+BatteryCard             ✓             ✓
+EntitiesCard            ✓             ✓
+GraphCard               ?             ✓
+RichChartCard           ✗             ✓
+ImageCard               ✗             ✓
+```
 
-The composition layer owns the knowledge of:
+These symbols are placeholders for measured capability, not permanent promises.
 
-- which observations exist
-- which observations are presented together
-- how those observations are arranged
-- which generic presentation metadata applies
+The important architectural rule is:
 
-The Screen implementation owns behaviour that is genuinely behavioural.
+> **The application expresses meaning and presentation intent. The target platform determines which implementation capabilities are available.**
+
+## Semantic Roles and Physical Expression
+
+The same principle applies to visual resources.
+
+An application may express:
+
+```text
+critical
+warning
+normal
+```
+
+The ESP8266 may map those roles to its available 2-bit palette.
+
+A stronger target may map them to richer colours.
+
+Likewise:
+
+```text
+upward flow
+
+downward flow
+```
+
+can remain semantic presentation intent while the platform chooses the actual glyph, colour or available visual primitive.
+
+The application should not need to understand the physical framebuffer implementation merely to express those meanings.
+
+## Resource Budgets as Capabilities
+
+Platform awareness should eventually include measurable constraints such as:
+
+- available framebuffer memory
+- available RAM
+- maximum generated Card count
+- maximum Canvas complexity
+- renderer availability
+- asset memory requirements
+- execution-time constraints
+
+These limits should be treated as capabilities that the composer can validate where practical.
+
+A build targeting an ESP8266 should therefore be able to reject a composition that requires a capability the target does not provide, rather than discovering the problem only after deployment.
+
+## Definition of Done
+
+Phase 10 is complete when:
+
+- [ ] Card capability availability is represented explicitly per platform.
+- [ ] Platform-specific limitations do not leak into application observation semantics.
+- [ ] The composer can validate unsupported presentation capabilities where practical.
+- [ ] Resource-sensitive limits are documented and measured.
+- [ ] ESP8266 remains a supported constrained platform without becoming the architectural lowest common denominator for all future targets.
+- [ ] ESP32-family capabilities can grow without forcing a redesign of the application composition model.
 
 ---
 
-# Definition of Done
+# Sprint Eta Definition of Done
 
 Sprint Eta is complete when:
 
@@ -451,17 +927,21 @@ Sprint Eta is complete when:
 - [x] Generic Screen definitions are generated.
 - [x] `SensorTile` contains no domain-specific `SensorType`.
 - [x] YAML-defined MQTT observations resolve through generated composition metadata.
-- [ ] Energy Status consumes `ScreenDefinition` generically rather than hardcoding its six observation aliases.
+- [ ] Energy Status no longer defines application composition through a fixed six-quadrant implementation model.
+- [ ] A logical Canvas and Card composition model exists.
+- [ ] Generic Card renderers exist for the initial capability set.
 - [ ] Weather observations are migrated into `telemetry.yaml`.
-- [ ] Weather consumes generated Screen composition.
-- [ ] New Screens can be provisioned without duplicating application-definition knowledge across runtime files.
-- [ ] Generated Screen composition is sufficient for generic Screen rendering where specialised behaviour is not required.
+- [ ] Weather consumes the same generic Screen composition model.
+- [ ] Platform presentation capabilities are explicit and composable.
+- [ ] Resource constraints are treated as architectural capability boundaries.
+- [ ] New Screens can be composed without duplicating application-definition knowledge across runtime files.
+- [ ] Generated composition remains deterministic and suitable for constrained targets.
 
 ---
 
 # Architectural Result
 
-The architecture now has a third major axis alongside identity and platform composition:
+Sprint Eta establishes three major axes alongside the existing framework boundaries:
 
 ```text
                          TELEMETRY
@@ -473,9 +953,14 @@ The architecture now has a third major axis alongside identity and platform comp
           │                  │                  │
    ObservationKey       telemetry.yaml     PlatformIO env
           │                  │                  │
- ObservationHandle     generated model    ESP8266 / ESP32
-          │                  │                  │
-      Repository        Screen assembly     capabilities
+ ObservationHandle    Screen / Canvas /    ESP8266 / ESP32
+          │            Card composition       capabilities
+      Repository              │                  │
+          │             generated model         │
+          └──────────────────┼──────────────────┘
+                             │
+                             ▼
+                       Runtime system
 ```
 
 The framework therefore moves toward a clearer division:
@@ -487,9 +972,24 @@ Framework
 Application composition
     declares what this application uses
 
+Build-time composer
+    validates and provisions the implementation structures
+
 Platform composition
-    selects what this target instantiates
+    selects what this target can instantiate
 ```
+
+The application's knowledge should survive changes in:
+
+- transport
+- repository storage
+- Screen layout
+- Card implementation
+- display resolution
+- display palette
+- microcontroller generation
+
+That is a strong indication that the right boundaries are being preserved.
 
 ---
 
@@ -499,18 +999,54 @@ The pressure looked like a Screen-creation problem.
 
 It was actually a composition problem.
 
-The framework had already learned how to separate:
+The first answer was to move application knowledge into `telemetry.yaml`.
 
-- hardware
-- input
-- navigation
-- data sources
-- observation identity
-- runtime storage
+The Energy Composition Proving Slice proved that this could work.
 
-The next step was to stop forcing the application to reassemble those concepts manually.
+Then the proving slice exposed its own limitation.
 
-The solution is declarative composition:
+A generated Screen definition is not enough if the Screen still thinks in terms of a fixed six-quadrant implementation.
+
+The next answer is therefore not:
+
+> **Make the six quadrants generic.**
+
+It is:
+
+> **Discover a generic Screen model based on a Canvas and Cards.**
+
+That distinction matters.
+
+A generic framework should not preserve today's layout merely because today's layout happened to be the first successful consumer of the composition system.
+
+The application should be able to decide whether its real estate contains:
+
+- two large gauges;
+- a battery Card beside a value Card;
+- an Entities Card spanning the Canvas;
+- several small Cards in a grid;
+- a mixture of Cards with different logical sizes;
+- or another composition supported by the target platform.
+
+The architecture should make those choices declarative.
+
+But it should also remain honest about hardware.
+
+Generic composition does not mean that every target can render every composition.
+
+The ESP8266 has already taught us that a platform can compile code that is not actually viable at runtime. That lesson must remain part of the architecture:
+
+> **Test platform assumptions instead of theorising about them.**
+
+The resource boundary is therefore not something the architecture works around after the fact.
+
+It is something the architecture should expose.
+
+The goal is not to make every platform identical.
+
+The goal is to make application intent independent of the accidental limitations of one particular implementation while allowing the target to declare what it can actually provide.
+
+This leads to a more mature composition model:
 
 ```text
 Application knowledge
@@ -519,19 +1055,35 @@ telemetry.yaml
         ↓
 Build-time composer
         ↓
+ScreenDefinition
+        ↓
+Canvas
+        ↓
+Card composition
+        ↓
+Platform capability selection
+        ↓
 Generated runtime structures
         ↓
 Telemetry framework
 ```
 
-The source file describes knowledge.
+The source file describes knowledge and presentation intent.
 
-The composer translates it.
+The composer validates it and translates it.
 
-The runtime executes it.
+The platform determines which capabilities are available.
+
+The runtime executes the result.
+
+And the architectural boundary becomes visible rather than accidental.
 
 > **The Publisher is concerned with knowledge, not files.**
 
 For Telemetry, the equivalent rule is:
 
 > **The application declares knowledge once; the build system provisions the implementation structures that express it.**
+
+And the next refinement is:
+
+> **The application declares what it wants to express; the platform determines what it can afford to render.**
