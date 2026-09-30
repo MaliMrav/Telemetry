@@ -2,7 +2,7 @@
 
 ## Objective
 
-> **Establish a single declarative application definition from which Telemetry can validate and generate the runtime structures required to compose observations and Screens, while preserving the existing framework boundaries and making platform capability an explicit architectural boundary.**
+> **Establish a single application definition that is good enough for both machines and humans: a definition from which Telemetry can validate and generate the runtime structures required to compose observations and Screens, while preserving the existing framework boundaries and making platform capability an explicit architectural boundary.**
 
 Sprint Zeta separated observation identity, runtime handles, repository storage and source mechanisms.
 
@@ -64,6 +64,12 @@ Sprint Eta establishes these principles:
 > **Logical layout is independent of physical display pixels.**
 
 > **Platform limits may constrain presentation capabilities without changing application meaning.**
+
+> **The application definition must be suitable for both machine consumption and human authoring.**
+
+> **The Telemetry Application Definition Studio is an authoring interface, not a second source of truth.**
+
+> **The Studio must preserve the relationships among observations, sources, Screens, Canvas composition, Cards and Build configuration rather than exposing them as disconnected records.**
 
 ---
 
@@ -302,6 +308,133 @@ The real pressure is:
 > **Can a Screen become a generic canvas onto which the application composes presentation components, without the Screen implementation knowing which observations or layout happen to exist?**
 
 This is a composition problem, not an Energy Screen problem.
+
+## The Application Definition Studio — The New Architect in the Room
+
+Phase 7 also welcomes a new architectural participant: the **Telemetry Application Definition Studio**.
+
+The Studio exists for the person who wants to create or modify a Telemetry application without needing to understand YAML syntax, generated C++ or the internal runtime structures used by the framework.
+
+Its purpose is not to replace the Application Definition.
+
+Its purpose is to make that definition understandable and editable by humans while preserving the same machine-readable source of truth.
+
+The conceptual relationship is:
+
+```
+Telemetry Application
+│
+├── Observations
+│   ├── Current Power Production
+│   ├── Current Power Consumption
+│   ├── Battery Charge
+│   └── Battery Power
+│
+├── Screens
+│   ├── Energy Status
+│   │   ├── Chrome
+│   │   └── Canvas
+│   │       ├── Battery Card
+│   │       ├── Gauge Card
+│   │       └── Value Card
+│   │
+│   └── Weather
+│
+└── Build
+```
+
+The Studio should understand and maintain the relationships represented by that model.
+
+For example, an author should be able to:
+
+- add, edit or remove an Observation;
+- define or change its Source;
+- create or modify a Screen;
+- compose a Canvas;
+- add, remove, resize and rearrange Cards;
+- select which Observations a Card references;
+- configure presentation properties appropriate to the selected Card;
+- validate or build the Application Definition;
+- load an existing `telemetry.yaml` and continue editing it.
+
+The Studio should make invalid or incomplete relationships visible at the authoring boundary rather than allowing the author to discover them later through compiler errors.
+
+This is particularly important for the transition from:
+
+```
+human intent
+      ↓
+application definition
+```
+
+to:
+
+```
+application definition
+      ↓
+ScreenDefinition
+      ↓
+observation alias
+      ↓
+ObservationHandle
+      ↓
+SensorRepository
+```
+
+The Studio does not bypass that pipeline.
+
+It makes the first step less painful and less error-prone.
+
+### The Studio Is Not the Source of Truth
+
+The authoritative model remains:
+
+`telemetry.yaml`
+
+The supported authoring paths therefore become:
+
+```
+human author
+    │
+    ├── Application Definition Studio
+    │          │
+    │          ▼
+    │     telemetry.yaml
+    │
+    └── text editor
+               │
+               ▼
+          telemetry.yaml
+```
+
+Both paths feed the same build-time composer.
+
+The Studio must not generate a parallel proprietary project format that becomes more authoritative than the YAML definition.
+
+Its implementation technology is intentionally not frozen by Phase 7. A desktop application, a local web interface, a Python-based tool or another appropriate implementation may be considered later. The architectural contract comes first.
+
+### The Studio as an Architectural Forcing Function
+
+The Studio is also a design tool for the architects and framework developers.
+
+If a person cannot reasonably create a composition through the Studio model, that may indicate that the underlying Application Definition itself is too fragmented, ambiguous or implementation-oriented.
+
+The Studio should therefore force uncomfortable questions such as:
+
+- Where does a Card get its Observation?
+- Where does an Entities Card define ordering?
+- Where does a Gauge obtain its minimum and maximum?
+- Which presentation properties belong to the Observation and which belong to the Card?
+- How are Sources related to Observations?
+- What happens when an Observation is removed while a Card still references it?
+- Which Card types are available for the selected platform?
+- How does the author discover an invalid or unsupported composition before building?
+
+These are not merely user-interface questions.
+
+They are architecture questions.
+
+The Studio therefore becomes another way to test whether the boundaries of Observation, Source, Screen, Canvas, Card and Platform are actually coherent.
 
 ## The Target
 
@@ -647,6 +780,10 @@ Phase 7 is complete when:
 - [ ] Screen chrome is conceptually separated from Canvas composition.
 - [ ] Composition can be represented by deterministic generated structures.
 - [ ] The design has an explicit place for platform capability constraints.
+- [ ] The Application Definition model can be represented coherently through a human-facing authoring interface.
+- [ ] The Studio can load and preserve an existing `telemetry.yaml` definition.
+- [ ] The Studio model maintains relationships among Observations, Sources, Screens, Canvas, Cards and Build configuration.
+- [ ] The Studio does not become a second source of truth or proprietary runtime model.
 
 ---
 
@@ -936,6 +1073,9 @@ Sprint Eta is complete when:
 - [ ] Resource constraints are treated as architectural capability boundaries.
 - [ ] New Screens can be composed without duplicating application-definition knowledge across runtime files.
 - [ ] Generated composition remains deterministic and suitable for constrained targets.
+- [ ] The Application Definition model is suitable for both machine consumption and human authoring.
+- [ ] A Telemetry Application Definition Studio can author and modify the same application definition consumed by the composer.
+- [ ] Human authoring does not require duplication of application knowledge into a separate proprietary source format.
 
 ---
 
@@ -1046,6 +1186,12 @@ The goal is not to make every platform identical.
 
 The goal is to make application intent independent of the accidental limitations of one particular implementation while allowing the target to declare what it can actually provide.
 
+The same discipline applies to the human boundary.
+
+The goal is not to hide the Application Definition from developers who want to edit YAML directly. The goal is to make that definition accessible to people who should be able to compose an application without first learning every implementation detail behind it.
+
+That makes the Telemetry Application Definition Studio a useful architectural participant as well as a usability tool.
+
 This leads to a more mature composition model:
 
 ```text
@@ -1069,6 +1215,8 @@ Telemetry framework
 ```
 
 The source file describes knowledge and presentation intent.
+
+The Application Definition Studio provides a human-facing way to create and maintain that definition without becoming a second source of truth.
 
 The composer validates it and translates it.
 
